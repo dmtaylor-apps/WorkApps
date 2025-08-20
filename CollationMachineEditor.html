@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Excel Splitter Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+  body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background: #e9e9e9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  .container {
+    background: #ffffff;
+    padding: 30px 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+  }
+  h2 {
+    margin-bottom: 20px;
+    color: #333333;
+  }
+  input[type="file"] {
+    width: 90%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    margin: 10px 0;
+  }
+  input[type="number"] {
+    width: 100px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  label {
+    display: inline-block;
+    margin: 10px 0;
+    font-weight: 500;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+  .checkbox-container {
+    display: inline-block;
+    position: relative;
+    padding-left: 35px;
+    margin: 10px 0;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+  }
+  .checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0; width: 0;
+  }
+  .checkmark {
+    position: absolute;
+    top: 0; left: 0;
+    height: 20px; width: 20px;
+    background-color: #eee;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  .checkbox-container:hover input ~ .checkmark { background-color: #ddd; }
+  .checkbox-container input:checked ~ .checkmark {
+    background-color: #4a90e2;
+  }
+  .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+  }
+  .checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+  }
+  .checkbox-container .checkmark:after {
+    left: 6px; top: 2px;
+    width: 5px; height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  button {
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 30px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease, transform 0.2s;
+    margin-top: 10px;
+  }
+  button:hover {
+    background: #357ab8;
+    transform: translateY(-2px);
+  }
+  #status {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  #progressContainer {
+    width: 100%;
+    background: #ddd;
+    border-radius: 12px;
+    margin-top: 15px;
+    display: none;
+  }
+  #progressBar {
+    width: 0%;
+    height: 20px;
+    background: #4a90e2;
+    border-radius: 12px;
+    transition: width 0.3s ease;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Collation Splitter Tool</h2>
+  <input type="file" id="inputFile" accept=".xlsx,.xls" />
+  <br>
+<label>Split size (optional, 0 = no split):
+  <input type="number" id="splitSize" min="0" placeholder="0 = no split">
+</label>
+  <label class="checkbox-container">Reverse rows
+    <input type="checkbox" id="reverseRows">
+    <span class="checkmark"></span>
+  </label>
+  <br>
+  <button id="processBtn">Process Excel</button>
+  <div id="progressContainer"><div id="progressBar"></div></div>
+  <div id="status"></div>
+
+<div style="text-align:left; margin-bottom:20px; font-size:14px; color:#333; background:#f7f7f7; padding:15px 20px; border-radius:12px; border:1px solid #ddd; line-height:1.5;">
+  <strong style="display:block; margin-bottom:8px; font-size:15px; color:#222;">Instructions:</strong>
+  <ol style="padding-left:20px; margin:0;">
+    <li><strong>StoreName column:</strong> Use the Header 'StoreName' to differentiate each store. Must be text-based; e.g., "Branch 1".</li>
+    <li><strong>Data columns:</strong> Label using <strong>LetterNumber</strong> format, e.g., <strong>A1, A2, B3</strong>, up to <strong>Z12</strong>.</li>
+    <li><strong>Paired columns:</strong> For values that fill two columns, name the column <strong>A1A2</strong> (or similar). Both columns will get the same value.</li>
+    <li>Any other columns not following this format will be ignored.</li>
+    <li>The top header row will be automatically removed when exported.</li>
+    <li>Optionally set a split size to divide large sheets into multiple CSVs. Leave as 0 if not needed.</li>
+    <li>Check "Reverse rows" if you want the bottom row to appear first within each split.</li>
+  </ol>
+</div>
+
+<div style="text-align:left; margin-bottom:20px; font-size:14px; color:#333;">
+  <strong>Example spreadsheet:</strong>
+  <p>
+    <a href="#" id="downloadExample" style="color:#4a90e2; text-decoration:none; font-weight:bold;">Download Example Spreadsheet</a>
+  </p>
+</div>
+
+<script>
+document.getElementById("downloadExample").addEventListener("click", function(e){
+  e.preventDefault();
+  
+  const exampleData = [
+    {StoreName:"Branch 1", A1:2,A2:0,A3:1,A4:0,A5:3,A6:1,A7:0,A8:2,A9:1,A10:0,A11:0,A12:1,
+     B1:0,B2:1,B3:1,B4:0,B5:2,B6:1,B7:0,B8:2,B9:1,B10:0,B11:1,B12:0},
+    {StoreName:"Branch 2", A1:0,A2:1,A3:0,A4:2,A5:1,A6:0,A7:2,A8:1,A9:3,A10:0,A11:1,A12:0,
+     B1:1,B2:0,B3:2,B4:1,B5:0,B6:1,B7:0,B8:1,B9:2,B10:1,B11:0,B12:1},
+    {StoreName:"Branch 3", A1:1,A2:2,A3:0,A4:1,A5:0,A6:2,A7:1,A8:0,A9:1,A10:2,A11:0,A12:1,
+     B1:2,B2:1,B3:0,B4:2,B5:1,B6:0,B7:1,B8:2,B9:0,B10:1,B11:2,B12:0},
+    {StoreName:"Branch 4", A1:0,A2:1,A3:2,A4:1,A5:0,A6:1,A7:2,A8:0,A9:1,A10:0,A11:1,A12:2,
+     B1:1,B2:0,B3:1,B4:0,B5:2,B6:1,B7:0,B8:1,B9:2,B10:0,B11:1,B12:0}
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exampleData);
+  XLSX.utils.book_append_sheet(wb, ws, "Example");
+  
+  const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+  const blob = new Blob([wbout], {type:"application/octet-stream"});
+  saveAs(blob, "ExampleSpreadsheet.xlsx");
+});
+</script>
+
+<script>
+let selectedFile;
+document.getElementById("inputFile").addEventListener("change", e => {
+  selectedFile = e.target.files[0];
+});
+
+function createCSV(data, headers) {
+  const rows = [];
+  data.forEach(r => {
+    rows.push(headers.map(h => r[h] ?? "").join(","));
+  });
+  return rows.join("\n");
+}
+
+function downloadBlob(content, fileName) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  saveAs(blob, fileName);
+}
+
+function exportExcel(logData) {
+  const ws = XLSX.utils.json_to_sheet(logData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Log");
+  const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  saveAs(new Blob([wbout], { type: "application/octet-stream" }), "ExportLog.xlsx");
+}
+
+document.getElementById("processBtn").onclick = function() {
+  const statusDiv = document.getElementById("status");
+  if (!selectedFile) {
+    statusDiv.textContent = "Select a file first";
+    return;
+  }
+  statusDiv.textContent = "Processing...";
+  const progressContainer = document.getElementById("progressContainer");
+  const progressBar = document.getElementById("progressBar");
+  progressContainer.style.display = "block";
+  progressBar.style.width = "0%";
+
+  const splitSize = parseInt(document.getElementById("splitSize").value) || 0;
+  const reverse = document.getElementById("reverseRows").checked;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      let json = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      if (json.length === 0) { statusDiv.textContent = "Empty sheet"; return; }
+
+      // DO NOT remove the first row
+      // json.shift();
+
+      const headers = Object.keys(json[0]).map(h => h.trim());
+      const storeCol = headers.find(h => h.toUpperCase() === "STORENAME");
+      if (!storeCol) { statusDiv.textContent = "No StoreName column"; return; }
+
+      const validHeaders = headers.filter(h =>
+        /^[A-Z](1[0-2]|[1-9])$/.test(h.toUpperCase()) ||
+        /^[A-Z](1[0-2]|[1-9])[A-Z](1[0-2]|[1-9])$/.test(h.toUpperCase())
+      );
+      const letters = [...new Set(validHeaders.map(h => h[0].toUpperCase()))];
+      if (letters.length === 0) { statusDiv.textContent = "No valid letter headers found"; return; }
+
+      const logData = [];
+      const totalSteps = letters.length * (splitSize > 0 ? Math.ceil(json.length / splitSize) : 1);
+      let currentStep = 0;
+
+      letters.forEach(letter => {
+        const allCols = [];
+        for (let i = 1; i <= 12; i++) allCols.push(letter + i);
+
+        const chunks = splitSize > 0 ? Array.from({length: Math.ceil(json.length / splitSize)}, (_, i) =>
+          json.slice(i*splitSize, (i+1)*splitSize)
+        ) : [json];
+
+        chunks.forEach((chunk, idx) => {
+          if (reverse) chunk.reverse();
+          const dataOut = [];
+          let index = 0;
+
+          // START row
+          const startRow = { Index: index, [storeCol]: "'START'" };
+          allCols.forEach(c => startRow[c] = 0);
+          startRow["Flag"] = 1;
+          dataOut.push(startRow);
+
+          // Data rows
+          chunk.forEach(r => {
+            index++;
+            const row = { Index: index, [storeCol]: `'${r[storeCol]}'` };
+            allCols.forEach(c => {
+              const mergedHeader = validHeaders.find(h => {
+                const upper = h.toUpperCase();
+                return upper.length >= 4 && upper.includes(c);
+              });
+              if (mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "") {
+                row[c] = r[mergedHeader];
+              } else {
+                row[c] = r[c] !== undefined && r[c] !== "" ? r[c] : 0;
+              }
+            });
+            row["Flag"] = 1;
+            dataOut.push(row);
+          });
+
+          // END row
+          index++;
+          const endRow = { Index: index, [storeCol]: "'END'" };
+          allCols.forEach(c => endRow[c] = 0);
+          endRow["Flag"] = 0;
+          dataOut.push(endRow);
+
+          const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]);
+          let fileName = selectedFile.name.replace(/\.[^/.]+$/, "") + " - " + letter;
+          if (chunks.length > 1) fileName += ` (part${idx+1})`;
+          fileName += ".csv";
+          downloadBlob(csv, fileName);
+
+          logData.push({ Letter: letter, Part: idx+1, RowsExported: dataOut.length, File: fileName });
+
+          currentStep++;
+          progressBar.style.width = Math.round((currentStep / totalSteps) * 100) + "%";
+        });
+      });
+
+      exportExcel(logData);
+      statusDiv.textContent = "Export complete! CSVs and log downloaded.";
+
+      document.getElementById("inputFile").value = "";
+      selectedFile = null;
+
+      setTimeout(() => {
+        progressContainer.style.display = "none";
+        progressBar.style.width = "0%";
+      }, 1000);
+
+    } catch (err) {
+      statusDiv.textContent = "Error: " + err.message;
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(selectedFile);
+};
+</script>
+</body>
+</html>
