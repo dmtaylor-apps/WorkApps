@@ -273,37 +273,37 @@ document.getElementById("processBtn").onclick = function() {
           const dataOut = [];
           let index = 0;
 
-          // START row
-          const startRow = { Index: index, [storeCol]: "'START'" };
-          allCols.forEach(c => startRow[c] = 0);
-          startRow["Flag"] = 1;
-          dataOut.push(startRow);
+  // START row
+const startRow = { Index: index, [storeCol]: `"START"` }; // double quotes
+allCols.forEach(c => startRow[c] = 0);
+startRow["Flag"] = 1;
+dataOut.push(startRow);
 
-          // Data rows
-          chunk.forEach(r => {
-            index++;
-            const row = { Index: index, [storeCol]: `'${r[storeCol]}'` };
-            allCols.forEach(c => {
-              const mergedHeader = validHeaders.find(h => {
-                const upper = h.toUpperCase();
-                return upper.length >= 4 && upper.includes(c);
-              });
-              if (mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "") {
-                row[c] = r[mergedHeader];
-              } else {
-                row[c] = r[c] !== undefined && r[c] !== "" ? r[c] : 0;
-              }
-            });
-            row["Flag"] = 1;
-            dataOut.push(row);
-          });
+// Data rows
+chunk.forEach(r => {
+  index++;
+  const row = { Index: index, [storeCol]: `"${r[storeCol]}"` }; // double quotes for branch
+  allCols.forEach(c => {
+    const mergedHeader = validHeaders.find(h => {
+      const upper = h.toUpperCase();
+      return upper.length >= 4 && upper.includes(c);
+    });
+    if (mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "") {
+      row[c] = r[mergedHeader];
+    } else {
+      row[c] = r[c] !== undefined && r[c] !== "" ? r[c] : 0;
+    }
+  });
+  row["Flag"] = 1;
+  dataOut.push(row);
+});
 
-          // END row
-          index++;
-          const endRow = { Index: index, [storeCol]: "'END'" };
-          allCols.forEach(c => endRow[c] = 0);
-          endRow["Flag"] = 0;
-          dataOut.push(endRow);
+// END row
+index++;
+const endRow = { Index: index, [storeCol]: `"END"` }; // double quotes
+allCols.forEach(c => endRow[c] = 0);
+endRow["Flag"] = 0;
+dataOut.push(endRow);
 
           const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]);
           let fileName = selectedFile.name.replace(/\.[^/.]+$/, "") + " - " + letter;
