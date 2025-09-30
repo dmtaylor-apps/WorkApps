@@ -1,4 +1,0 @@
-Flask>=2.0
-PyMuPDF>=1.22.0
-flask-cors
-gunicorn
