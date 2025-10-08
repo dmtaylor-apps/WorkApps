@@ -3,407 +3,281 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Barcode & QR Code Generator — Fixed SVG Output</title>
+<title>Barcode & QR Code Generator — PDF Output</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
-  header { background: #0f172a; color: white; padding: 1rem; text-align: center; display:flex; gap:.5rem; align-items:center; justify-content:center; }
-  header svg { width:32px; height:32px; fill:white; }
-  main { max-width:1000px; margin:auto; padding:2rem; }
-  .controls { display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-bottom:1rem; }
-  .btn { background:#2563eb; color:white; border:none; padding:.6rem 1rem; border-radius:8px; cursor:pointer; }
-  .btn:hover { background:#1e40af; }
-  .clear-btn { background:#ef4444; }
-  .clear-btn:hover { background:#b91c1c; }
-  input[type=file] { display:none; }
-  label.upload-label { background:#2563eb; color:white; padding:.6rem 1rem; border-radius:8px; cursor:pointer; }
-  .form-inline { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; margin-bottom:1rem; }
-  .form-inline input, select { padding:.4rem; border:1px solid #cbd5e1; border-radius:6px; font-size:.9rem; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; margin-top:2rem; }
-  .card { background:white; border-radius:12px; padding:15px; box-shadow:0 2px 6px rgba(0,0,0,0.1); text-align:center; position:relative; }
-  .delete-btn { position:absolute; top:5px; right:5px; background:#ef4444; border:none; border-radius:50%; width:24px; height:24px; color:white; font-weight:bold; cursor:pointer; }
-  .card svg { max-width:100%; height:auto; display:block; margin:auto; }
+body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+header { background: #0f172a; color: white; padding: 1rem; text-align: center; display:flex; gap:.5rem; align-items:center; justify-content:center; }
+header svg { width:32px; height:32px; fill:white; }
+main { max-width:1000px; margin:auto; padding:2rem; }
+.controls { display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-bottom:1rem; }
+.btn { background:#2563eb; color:white; border:none; padding:.6rem 1rem; border-radius:8px; cursor:pointer; }
+.btn:hover { background:#1e40af; }
+.clear-btn { background:#ef4444; }
+.clear-btn:hover { background:#b91c1c; }
+input[type=file] { display:none; }
+label.upload-label { background:#2563eb; color:white; padding:.6rem 1rem; border-radius:8px; cursor:pointer; }
+.form-inline { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; margin-bottom:1rem; }
+.form-inline input, select { padding:.4rem; border:1px solid #cbd5e1; border-radius:6px; font-size:.9rem; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; margin-top:2rem; }
+.card { background:white; border-radius:12px; padding:15px; box-shadow:0 2px 6px rgba(0,0,0,0.1); text-align:center; position:relative; }
+.delete-btn { position:absolute; top:5px; right:5px; background:#ef4444; border:none; border-radius:50%; width:24px; height:24px; color:white; font-weight:bold; cursor:pointer; }
+.card svg { max-width:100%; height:auto; display:block; margin:auto; }
 </style>
 
-<!-- libs -->
+<!-- Libraries -->
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<!-- qrcode-svg (common small library) - we keep it but code is defensive for other lib shapes -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode-svg@1.1.0/lib/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <header>
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 4h1v16H3zm2 0h2v16H5zm3 0h1v16H8zm2 0h3v16h-3zm4 0h1v16h-1zm2 0h2v16h-2zm3 0h1v16h-1zm2 0h1v16h-1z"/></svg>
-  <h1>Barcode & QR Code Generator</h1>
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 4h1v16H3zm2 0h2v16H5zm3 0h1v16H8zm2 0h3v16h-3zm4 0h1v16h-1zm2 0h2v16h-2zm3 0h1v16h-1zm2 0h1v16h-1z"/></svg>
+<h1>Barcode & QR Code Generator (PDF)</h1>
 </header>
-
 <main>
-  <div class="controls">
-    <label class="upload-label" for="csvFile">Upload CSV</label>
-    <input id="csvFile" type="file" accept=".csv" />
-    <button class="btn" onclick="downloadTemplate()">Download Template</button>
-    <button class="btn" onclick="downloadAllZIP()">Download All as ZIP</button>
-    <button class="btn" onclick="downloadAllIndividually()">Download All Individually</button>
-  </div>
+<div class="controls">
+<label class="upload-label" for="csvFile">Upload CSV</label>
+<input id="csvFile" type="file" accept=".csv" />
+<button class="btn" onclick="downloadTemplate()">Download Template</button>
+<button class="btn" onclick="downloadAllPDFs()">Download All Individually (PDF)</button>
 
-  <div class="form-inline">
-    <label>Type:
-      <select id="typeSelect">
-        <option value="barcode">Barcode</option>
-        <option value="qrcode">QR Code</option>
-      </select>
-    </label>
-  </div>
-
-  <div class="form-inline">
-    <input id="manualName" type="text" placeholder="Name" />
-    <input id="manualCode" type="text" placeholder="Code" />
-    <button class="btn" onclick="addManual()">Add</button>
-    <button class="btn clear-btn" onclick="clearAll()">Clear All</button>
-  </div>
-
-  <div class="form-inline">
-    <label>Width (mm): <input id="widthMm" type="number" value="55" min="10" /></label>
-    <label>Height (mm): <input id="heightMm" type="number" value="11" min="5" /></label>
-    <label><input id="showText" type="checkbox" checked /> Show text below barcode</label>
-    <label><input id="nameWithCode" type="checkbox" /> Name & Code in filename</label>
-  </div>
-
-  <div id="barcodes" class="grid"></div>
+</div>
+<div class="form-inline">
+<label>Type:
+<select id="typeSelect">
+<option value="barcode">Barcode</option>
+<option value="qrcode">QR Code</option>
+</select>
+</label>
+</div>
+<div class="form-inline">
+<input id="manualName" type="text" placeholder="Name" />
+<input id="manualCode" type="text" placeholder="Code" />
+<button class="btn" onclick="addManual()">Add</button>
+<button class="btn clear-btn" onclick="clearAll()">Clear All</button>
+</div>
+<div class="form-inline">
+<label>Barcode Width (mm): <input id="widthMm" type="number" value="55" min="10" /></label>
+<label>Barcode Height (mm): <input id="heightMm" type="number" value="11" min="5" /></label>
+<label>QR Size (mm): <input id="qrSizeMm" type="number" value="55" min="10" /></label>
+<label><input id="showText" type="checkbox" checked /> Show text below barcode</label>
+<label><input id="nameWithCode" type="checkbox" /> Name & Code in filename</label>
+</div>
+<div id="barcodes" class="grid"></div>
 </main>
 
 <script>
-/* ---------- helpers ---------- */
-
-const MM_TO_PX = 3.78; // approx conversion used before
+const MM_TO_PX = 3.78;
 const code39Map = {
-  '0':'nnnwwnwnn','1':'wnnwnnnnw','2':'nnwwnnnnw','3':'wnwwnnnnn','4':'nnnwwnnnw',
-  '5':'wnnwwnnnn','6':'nnwwwnnnn','7':'nnnwnnwnw','8':'wnnwnnwnn','9':'nnwwnnwnn',
-  'A':'wnnnnwnnw','B':'nnwnnwnnw','C':'wnwnnwnnn','D':'nnnnwwnnw','E':'wnnnwwnnn',
-  'F':'nnwnwwnnn','G':'nnnnnwwnw','H':'wnnnnwwnn','I':'nnwnnwwnn','J':'nnnnwwwnn',
-  'K':'wnnnnnnww','L':'nnwnnnnww','M':'wnwnnnnwn','N':'nnnnwnnww','O':'wnnnwnnwn',
-  'P':'nnwnwnnwn','Q':'nnnnnnwww','R':'wnnnnnwwn','S':'nnwnnnwwn','T':'nnnnwnwwn',
-  'U':'wwnnnnnnw','V':'nwwnnnnnw','W':'wwwnnnnnn','X':'nwnnwnnnw','Y':'wwnnwnnnn',
-  'Z':'nwwnwnnnn','-':'nwnnnnwnw','.':'wwnnnnwnn',' ':'nwwnnnwnn','$':'nwnwnwnnn',
-  '/':'nwnwnnnwn','+':'nwnnnwnwn','%':'nnnwnwnwn','*':'nwnnwnwnn'
+'0':'nnnwwnwnn','1':'wnnwnnnnw','2':'nnwwnnnnw','3':'wnwwnnnnn','4':'nnnwwnnnw',
+'5':'wnnwwnnnn','6':'nnwwwnnnn','7':'nnnwnnwnw','8':'wnnwnnwnn','9':'nnwwnnwnn',
+'A':'wnnnnwnnw','B':'nnwnnwnnw','C':'wnwnnwnnn','D':'nnnnwwnnw','E':'wnnnwwnnn',
+'F':'nnwnwwnnn','G':'nnnnnwwnw','H':'wnnnnwwnn','I':'nnwnnwwnn','J':'nnnnwwwnn',
+'K':'wnnnnnnww','L':'nnwnnnnww','M':'wnwnnnnwn','N':'nnnnwnnww','O':'wnnnwnnwn',
+'P':'nnwnwnnwn','Q':'nnnnnnwww','R':'wnnnnnwwn','S':'nnwnnnwwn','T':'nnnnwnwwn',
+'U':'wwnnnnnnw','V':'nwwnnnnnw','W':'wwwnnnnnn','X':'nwnnwnnnw','Y':'wwnnwnnnn',
+'Z':'nwwnwnnnn','-':'nwnnnnwnw','.':'wwnnnnwnn',' ':'nwwnnnwnn','$':'nwnwnwnnn',
+'/':'nwnwnnnwn','+':'nwnnnwnwn','%':'nnnwnwnwn','*':'nwnnwnwnn'
 };
 
-let generated = []; // array of items: {name, code, type, svg} where svg is a string with a valid <svg...> root (no XML decl)
+let generated = [];
 
-/* Make sure we have a proper <svg xmlns="..."> string.
-   sizePx used for width/height/viewBox if we need to create wrapper.
-*/
-function ensureSVGString(svgString, sizePx) {
-  if (!svgString) return null;
-  svgString = String(svgString).trim();
-
-  // If it looks like a DOM node string conversion (e.g. "[object SVGSVGElement]") -> try to extract outerHTML from a ref
-  if (/^\[object\s+SVG/.test(svgString)) {
-    // can't recover reliably from that string; return null
-    return null;
-  }
-
-  // If it already starts with an <svg ...> tag
-  if (/^<svg[\s>]/i.test(svgString)) {
-    // ensure xmlns attribute exists
-    if (!/xmlns=/.test(svgString)) {
-      svgString = svgString.replace(/^<svg/i, '<svg xmlns="http://www.w3.org/2000/svg"');
-    }
-    return svgString;
-  }
-
-  // If it starts with inner nodes like <g> or <path>, wrap them
-  if (/^<(g|path|rect|polygon|circle|defs|use|rect|line|polyline)/i.test(svgString)) {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">${svgString}</svg>`;
-  }
-
-  // If string doesn't start with '<', nothing valid here
-  return null;
-}
-
-/* ---------- Barcode (Code39) ---------- */
-/* Returns an <svg ...> string (no XML declaration) that's safe to insert into innerHTML or to save after prepending XML decl. */
-function generateCode39SVGString(value, widthMm = 55, heightMm = 11, showText = true) {
-  value = String(value || '').toUpperCase();
-  const text = `*${value}*`;
-  const barHeight = (heightMm || 11) * MM_TO_PX;
-  const wide = 3;
-  const units = [];
-
-  for (const c of text) {
-    const p = code39Map[c];
-    if (!p) continue;
-    for (let i = 0; i < p.length; i++) units.push(p[i] === 'n' ? 1 : wide);
-    units.push(1); // inter char gap
-  }
-  units.pop(); // last gap not needed
-
-  const totalUnits = units.reduce((a, b) => a + b, 0) || 1;
-  const widthPx = (widthMm || 55) * MM_TO_PX;
-  const unitWidth = widthPx / totalUnits;
-  let x = 0;
-  const bars = [];
-
-  for (const c of text) {
-    const p = code39Map[c];
-    if (!p) continue;
-    for (let i = 0; i < p.length; i++) {
-      const w = (p[i] === 'n' ? 1 : wide) * unitWidth;
-      if (i % 2 === 0) {
-        bars.push(`<rect x="${x.toFixed(2)}" y="0" width="${w.toFixed(2)}" height="${barHeight.toFixed(2)}" fill="black"/>`);
-      }
-      x += w;
-    }
-    // inter-character gap
-    x += unitWidth;
-  }
-
-  const svgHeight = barHeight + (showText ? 12 : 0);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${widthPx}" height="${svgHeight}" viewBox="0 0 ${widthPx} ${svgHeight}">
-    <rect width="100%" height="100%" fill="white" />
-    ${bars.join('')}
-    ${showText ? `<text x="${(widthPx / 2).toFixed(2)}" y="${(barHeight + 10).toFixed(2)}" font-size="10" text-anchor="middle" fill="black">${escapeXML(value)}</text>` : ''}
-  </svg>`.trim();
-
-  return svg;
-}
-
-/* ---------- QR Code ---------- */
-/* This function is defensive about the qrcode library API:
-   - some libs return a DOM node (SVG element)
-   - some return a string containing inner <path> or a full <svg>
-   - some return an object with .svg() method
-   We try several ways and then wrap / fix missing namespace if needed.
-*/
-function generateQRCodeSVGString(value, widthMm = 55) {
-  const sizePx = Math.round((widthMm || 55) * MM_TO_PX);
-  let svgString = null;
-
-  try {
-    // 1) try calling QRCode as function (some libs return an SVG DOM node or string)
-    if (typeof QRCode === 'function') {
-      try {
-        // common API for papnkukn/qrcode-svg and similar: QRCode({ msg/dim/pad/... })
-        const maybeNode = QRCode({ msg: String(value), dim: sizePx, pad: 0, vrb: 0 });
-        svgString = extractSVGFromMaybe(maybeNode);
-      } catch (err) {
-        // try alternate constructor form used by some other libs
-        try {
-          // new-style libs sometimes want new QRCode({ content, width, height, padding })
-          const obj = new QRCode({ content: String(value), width: sizePx, height: sizePx, padding: 0 });
-          if (obj) svgString = extractSVGFromMaybe(obj);
-        } catch (err2) {
-          // try simple call QRCode(value)
-          try {
-            const maybeSimple = QRCode(String(value));
-            svgString = extractSVGFromMaybe(maybeSimple);
-          } catch (err3) {
-            // swallow
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('QR generation trial error:', e);
-  }
-
-  // final fallback: if nothing generated, produce a visible placeholder SVG so saved file is valid
-  if (!svgString) {
-    console.error('Could not produce QR SVG via library; falling back to placeholder.');
-    svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}"><rect width="100%" height="100%" fill="#fff"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="12" fill="#f00">QR ERROR</text></svg>`;
-  } else {
-    // ensure we have a root <svg> with namespace
-    svgString = ensureSVGString(svgString, sizePx) || svgString;
-  }
-
-  return svgString;
-}
-
-/* Try to extract useful svg string/out of various return shapes */
-function extractSVGFromMaybe(maybe) {
-  if (!maybe && maybe !== 0) return null;
-  // if a plain string -> use it
-  if (typeof maybe === 'string') {
-    return maybe;
-  }
-  // if it's a DOM node (SVGElement), outerHTML is best
-  if (maybe.nodeType && typeof maybe.outerHTML === 'string') {
-    return maybe.outerHTML;
-  }
-  // some libs return an object with .svg() that returns either a string or an SVG node
-  if (typeof maybe.svg === 'function') {
-    try {
-      const out = maybe.svg();
-      if (typeof out === 'string') return out;
-      if (out && out.outerHTML) return out.outerHTML;
-    } catch (e) {
-      // ignore
-    }
-  }
-  // some libs return an object with .toString or .toSVG
-  if (typeof maybe.toString === 'function') {
-    try {
-      const s = maybe.toString();
-      if (typeof s === 'string' && s.trim().length) return s;
-    } catch (e) {}
-  }
-  if (typeof maybe.toSVG === 'function') {
-    try {
-      const s2 = maybe.toSVG();
-      if (typeof s2 === 'string') return s2;
-    } catch (e) {}
-  }
-  return null;
-}
-
-/* simple XML escape for barcode text */
-function escapeXML(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
-}
-
-/* ---------- Rendering / UI ---------- */
-
-function renderBarcodes(data) {
-  const container = document.getElementById('barcodes');
-  container.innerHTML = '';
-  const widthMm = parseFloat(document.getElementById('widthMm').value) || 55;
-  const heightMm = parseFloat(document.getElementById('heightMm').value) || 11;
-  const showText = document.getElementById('showText').checked;
-
-  generated = []; // rebuild from passed data
-
-  data.forEach((item, i) => {
-    const type = item.type || document.getElementById('typeSelect').value || 'barcode';
-    let svg = null;
-    if (type === 'barcode') {
-      svg = generateCode39SVGString(item.code, widthMm, heightMm, showText);
-    } else {
-      svg = generateQRCodeSVGString(item.code, widthMm);
-    }
-
-    if (!svg) return;
-
-    // store svg for download (we store the svg root string WITHOUT XML declaration; downloader will prepend XML declaration)
-    const stored = { name: item.name || ('code' + (i+1)), code: item.code, type, svg };
-    generated.push(stored);
-
-    // create card for UI (embedding an <svg> string into innerHTML is fine because we do NOT include any XML declaration here)
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `${svg}<p style="margin-top:.5rem; font-size:.9rem;">${escapeTextForHTML(item.name)}</p>`;
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.title = 'Delete';
-    deleteBtn.textContent = '×';
-    deleteBtn.onclick = () => { removeBarcode(i); };
-    card.appendChild(deleteBtn);
-
-    const dlBtn = document.createElement('button');
-    dlBtn.className = 'btn';
-    dlBtn.style.marginTop = '8px';
-    dlBtn.textContent = 'Download';
-    dlBtn.onclick = () => downloadSingle(stored);
-    card.appendChild(dlBtn);
-
-    container.appendChild(card);
-  });
-}
-
+/* ---------- Helpers ---------- */
+function escapeXML(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
 function escapeTextForHTML(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-/* ---------- CSV Upload ---------- */
-document.getElementById('csvFile').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: (results) => {
-      const type = document.getElementById('typeSelect').value;
-      const rows = results.data.map(r => ({ name: r['Name'] || r['name'] || r['Label'] || '', code: r['Barcode'] || r['barcode'] || r['Code'] || r['code'] || '', type }));
-      renderBarcodes(rows.filter(r => r.name && r.code));
-      e.target.value = ''; // reset input so same file can be re-uploaded if desired
+/* ---------- Rendering ---------- */
+async function renderBarcodes(data){
+    const container = document.getElementById('barcodes');
+    container.innerHTML = '';
+    generated = [];
+
+    for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        const type = item.type || document.getElementById('typeSelect').value || 'barcode';
+        const stored = { name: item.name || ('code'+(i+1)), code: item.code, type };
+        generated.push(stored);
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        let svgPreview = '';
+        if (type === 'barcode') {
+            svgPreview = generateCode39SVGString(item.code, 55, 11, true);
+        } else {
+            svgPreview = await generateQRCodeSVGString(item.code, 55);
+        }
+
+        card.innerHTML = `${svgPreview}<p style="margin-top:.5rem; font-size:.9rem;">${escapeTextForHTML(item.name)}</p>`;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn'; deleteBtn.textContent = '×';
+        deleteBtn.onclick = () => { removeBarcode(i); };
+        card.appendChild(deleteBtn);
+
+        const dlBtn = document.createElement('button');
+        dlBtn.className = 'btn';
+        dlBtn.style.marginTop = '8px';
+        dlBtn.textContent = 'Download PDF';
+        dlBtn.onclick = () => downloadSinglePDF(stored);
+        card.appendChild(dlBtn);
+
+        container.appendChild(card);
     }
-  });
+}
+
+/* ---------- Barcode/QR SVG Preview (UI only) ---------- */
+function generateCode39SVGString(value,widthMm=55,heightMm=11,showText=true){
+    value=`*${value.toUpperCase()}*`;
+    const barHeight = heightMm * MM_TO_PX;
+    const wide=3; const units=[];
+    for(const c of value){ const p=code39Map[c]; if(!p)continue; for(let i=0;i<p.length;i++) units.push(p[i]==='n'?1:wide); units.push(1);}
+    units.pop();
+    const totalUnits = units.reduce((a,b)=>a+b,0)||1;
+    const widthPx = widthMm*MM_TO_PX; const unitWidth = widthPx/totalUnits;
+    let x=0; const bars=[];
+    for(const c of value){ const p=code39Map[c]; if(!p)continue; for(let i=0;i<p.length;i++){ const w=(p[i]==='n'?1:wide)*unitWidth; if(i%2===0)bars.push(`<rect x="${x.toFixed(2)}" y="0" width="${w.toFixed(2)}" height="${barHeight.toFixed(2)}" fill="black"/>`); x+=w;} x+=unitWidth;}
+    const svgHeight=barHeight+(showText?12:0);
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${widthPx}" height="${svgHeight}" viewBox="0 0 ${widthPx} ${svgHeight}"><rect width="100%" height="100%" fill="white"/>${bars.join('')}${showText?`<text x="${(widthPx/2).toFixed(2)}" y="${(barHeight+10).toFixed(2)}" font-size="10" text-anchor="middle" fill="black">${escapeXML(value.replace(/\*/g,''))}</text>`:''}</svg>`;
+}
+
+async function generateQRCodeSVGString(value, widthMm=55) {
+    const sizePx = widthMm * MM_TO_PX;
+    try {
+        return await QRCode.toString(value, {
+            type: 'svg',
+            margin: 0,
+            width: sizePx,
+            color: { dark: '#000000', light: '#ffffff' } // black & white
+        });
+    } catch (e) {
+        console.error("QR generation failed", e);
+        return `<svg width="${sizePx}" height="${sizePx}" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#fff"/>
+            <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="12" fill="#f00">QR ERROR</text>
+        </svg>`;
+    }
+}
+
+/* ---------- CSV Upload ---------- */
+document.getElementById('csvFile').addEventListener('change',e=>{
+    const file = e.target.files[0];
+    if(!file)return;
+    Papa.parse(file,{ header:true, skipEmptyLines:true, complete: results=>{
+        const type=document.getElementById('typeSelect').value;
+        const rows = results.data.map(r=>({ name: r['Name']||r['name']||r['Label']||'', code:r['Barcode']||r['barcode']||r['Code']||r['code']||'', type }));
+        renderBarcodes(rows.filter(r=>r.name&&r.code));
+        e.target.value='';
+    }});
 });
 
-/* ---------- manual add / remove / clear ---------- */
-function addManual() {
-  const name = document.getElementById('manualName').value.trim();
-  const code = document.getElementById('manualCode').value.trim();
-  const type = document.getElementById('typeSelect').value;
-  if (!name || !code) { alert('Please enter both Name and Code'); return; }
-  // append by re-rendering existing + new
-  renderBarcodes([...generated.map(g=>({name:g.name,code:g.code,type:g.type})), { name, code, type }]);
-  document.getElementById('manualName').value = '';
-  document.getElementById('manualCode').value = '';
+/* ---------- Manual Add / Remove ---------- */
+function addManual(){
+    const name=document.getElementById('manualName').value.trim();
+    const code=document.getElementById('manualCode').value.trim();
+    const type=document.getElementById('typeSelect').value;
+    if(!name||!code){alert('Please enter both Name and Code');return;}
+    renderBarcodes([...generated.map(g=>({name:g.name,code:g.code,type:g.type})), {name,code,type}]);
+    document.getElementById('manualName').value=''; document.getElementById('manualCode').value='';
+}
+function removeBarcode(index){ generated.splice(index,1); renderBarcodes(generated);}
+function clearAll(){ generated=[]; renderBarcodes([]);}
+
+/* ---------- PDF Generation ---------- */
+async function drawQRCodePDF(pdf, code, sizeMm, offsetX = 0, offsetY = 0) {
+    const qr = QRCode.create(code, { errorCorrectionLevel: 'H' });
+    const modules = qr.modules;
+    const moduleCount = modules.size;
+    const moduleSize = sizeMm / moduleCount;
+
+    pdf.setFillColor(0, 0, 0, 100, 'CMYK'); // Black CMYK
+    for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+            if (modules.get(row, col)) {
+                pdf.rect(offsetX + col * moduleSize, offsetY + row * moduleSize, moduleSize, moduleSize, 'F');
+            }
+        }
+    }
 }
 
-function removeBarcode(index) {
-  generated.splice(index, 1);
-  renderBarcodes(generated);
+function drawCode39PDF(pdf, code, widthMm, heightMm, showText = true, offsetX = 0, offsetY = 0) {
+    code = `*${code.toUpperCase()}*`;
+    const barHeight = heightMm;
+    const wide = 3;
+    const units = [];
+
+    for (const c of code) {
+        const p = code39Map[c];
+        if (!p) continue;
+        for (let i = 0; i < p.length; i++) units.push(p[i] === 'n' ? 1 : wide);
+        units.push(1);
+    }
+    units.pop();
+    const totalUnits = units.reduce((a, b) => a + b, 0) || 1;
+    const unitWidth = widthMm / totalUnits;
+
+    let x = offsetX;
+    for (const c of code) {
+        const p = code39Map[c];
+        if (!p) continue;
+        for (let i = 0; i < p.length; i++) {
+            const w = (p[i] === 'n' ? 1 : wide) * unitWidth;
+            if (i % 2 === 0) {
+                pdf.setFillColor(0, 0, 0, 100, 'CMYK'); // Black CMYK
+                pdf.rect(x, offsetY, w, barHeight, 'F');
+            }
+            x += w;
+        }
+        x += unitWidth;
+    }
+
+    if (showText) {
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0, 100, 'CMYK');
+        pdf.text(code.replace(/\*/g, ''), offsetX + widthMm / 2, offsetY + barHeight + 4, { align: 'center' });
+    }
 }
 
-function clearAll() {
-  generated = [];
-  renderBarcodes([]);
+async function downloadSinglePDF(item) {
+    if (!item || !item.code) { alert('No code to download'); return; }
+
+    const { jsPDF } = window.jspdf;
+    const widthMm = parseFloat(document.getElementById('widthMm').value) || 55;
+    const heightMm = parseFloat(document.getElementById('heightMm').value) || 11;
+    const qrSize = parseFloat(document.getElementById('qrSizeMm').value) || 55;
+    const showText = document.getElementById('showText').checked;
+
+    if (item.type === 'barcode') {
+        const textHeight = showText ? 5 : 0;
+        const pdfHeight = heightMm + textHeight;
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [widthMm, pdfHeight] });
+        drawCode39PDF(pdf, item.code, widthMm, heightMm, showText);
+        const filename = ((document.getElementById('nameWithCode').checked ? `${item.name} ${item.code}` : item.name) || 'code').replace(/[^a-z0-9_\-\.]/gi, '_') + '.pdf';
+        pdf.save(filename);
+    } else {
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [qrSize, qrSize] });
+        await drawQRCodePDF(pdf, item.code, qrSize);
+        const filename = ((document.getElementById('nameWithCode').checked ? `${item.name} ${item.code}` : item.name) || 'qrcode').replace(/[^a-z0-9_\-\.]/gi, '_') + '.pdf';
+        pdf.save(filename);
+    }
 }
 
-/* ---------- Downloads ---------- */
-
-function downloadSingle(item) {
-  // item.svg is an <svg...> string WITHOUT XML declaration
-  if (!item || !item.svg) { alert('No SVG to download'); return; }
-  const nameWithCode = document.getElementById('nameWithCode').checked;
-  const filenameBase = nameWithCode ? `${item.name} ${item.code}` : item.name;
-  const filename = ((filenameBase || 'code').replace(/[^a-z0-9_\-\.]/gi,'_')) + '.svg';
-
-  // prepend XML declaration (do NOT include BOM)
-  const xmlDecl = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  const content = xmlDecl + item.svg;
-
-  // create blob and save
-  const blob = new Blob([content], { type: 'image/svg+xml;charset=utf-8' });
-  saveAs(blob, filename);
+async function downloadAllPDFs() {
+    if (!generated.length) { alert('No codes generated'); return; }
+    for (const item of generated) { await downloadSinglePDF(item); }
 }
 
-function downloadAllIndividually() {
-  if (!generated.length) { alert('No codes generated'); return; }
-  generated.forEach(item => downloadSingle(item));
+/* ---------- CSV Template ---------- */
+function downloadTemplate(){
+    const csvContent='Name,Barcode\nExample A,ABC123\nExample B,12345\n';
+    const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8;'});
+    saveAs(blob,'code_template.csv');
 }
 
-/* ZIP download implemented using JSZip (optional) - we include dynamic import if user clicks */
-async function downloadAllZIP() {
-  if (!generated.length) { alert('No codes generated'); return; }
-  // lazy-load JSZip from CDN
-  try {
-    const JSZipModule = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
-    const JSZip = JSZipModule.default || JSZipModule;
-    const zip = new JSZip();
-    generated.forEach(item => {
-      const xmlDecl = '<?xml version="1.0" encoding="UTF-8"?>\n';
-      const content = xmlDecl + item.svg;
-      const filename = ((document.getElementById('nameWithCode').checked ? `${item.name} ${item.code}` : item.name) || 'code').replace(/[^a-z0-9_\-\.]/gi,'_') + '.svg';
-      zip.file(filename, content);
-    });
-    const blob = await zip.generateAsync({ type: 'blob' });
-    saveAs(blob, 'codes.zip');
-  } catch (err) {
-    console.error('Failed to load JSZip or create ZIP:', err);
-    alert('ZIP export failed — please try downloading individually or ensure CDN can be loaded.');
-  }
-}
-
-/* Download CSV template */
-function downloadTemplate() {
-  const csvContent = 'Name,Barcode\nExample A,ABC123\nExample B,12345\n';
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  saveAs(blob, 'code_template.csv');
-}
-
-/* ---------- init ---------- */
-renderBarcodes([]); // start empty
-
+/* ---------- Init ---------- */
+renderBarcodes([]);
 </script>
+
 </body>
 </html>
