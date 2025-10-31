@@ -11,31 +11,26 @@
  header { background: #0f172a; color: white; padding: 1rem; text-align: center; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
  header svg { width: 32px; height: 32px; fill: white; }
 
-
  .container {
   padding: 30px 40px;
   border-radius: 16px;
   text-align: center;
   max-width: 500px;
   width: 100%;
-
-  margin: 0 auto; /* centers the container horizontally */
-}
-
-
-
-
+  margin: 0 auto;
+ }
 
   h2 {
     margin-bottom: 20px;
     color: #333333;
   }
-  input[type="file"] {
+  input[type="file"], select {
     width: 90%;
     padding: 8px 12px;
     border-radius: 12px;
     border: 1px solid #ccc;
     margin: 10px 0;
+    font-size: 14px;
   }
   input[type="number"] {
     width: 100px;
@@ -98,9 +93,8 @@
   button {
     background: #2563eb; color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer;
   }
-  button:hover {
-background: #1e40af; s
-  }
+  button:hover { background: #1e40af; }
+  button:disabled { background: #94a3b8; cursor: not-allowed; }
   #status {
     margin-top: 15px;
     font-weight: bold;
@@ -128,25 +122,27 @@ background: #1e40af; s
    <h1>📊 Collation Splitter Tool</h1>
 </header>
 
-
-
-
 <div class="container">
-  	<input type="file" id="inputFile" accept=".xlsx,.xls" />
-  	<br>
-		<label>Split size (optional, 0 = no split):
-  			<input type="number" id="splitSize" min="0" placeholder="0 = no split">
-		</label>
-  		<label class="checkbox-container">Reverse rows
-    			<input type="checkbox" id="reverseRows">
-    		<span class="checkmark"></span>
- 		</label>
- 	 <br>
- 		 <button id="processBtn">Process Excel</button>
-  			<div id="progressContainer"><div id="progressBar"></div>
-</div>
+  	<input type="file" id="inputFile" accept=".xlsx,.xls" /><br>
 
-<div id="status"></div>
+    <!-- New Sheet Selector (same style as inputs) -->
+    <select id="sheetSelect" disabled>
+      <option value="">-- Select Sheet --</option>
+    </select><br>
+
+	<label>Split size (optional, 0 = no split):
+		<input type="number" id="splitSize" min="0" placeholder="0 = no split">
+	</label>
+	<label class="checkbox-container">Reverse rows
+		<input type="checkbox" id="reverseRows">
+		<span class="checkmark"></span>
+	</label>
+	<br>
+	<button id="processBtn" disabled>Process Excel</button>
+
+	<div id="progressContainer"><div id="progressBar"></div></div>
+	<div id="status"></div>
+
 
 <div style="text-align:left; margin-bottom:20px; font-size:14px; color:#333; background:#f7f7f7; padding:15px 20px; border-radius:12px; border:1px solid #ddd; line-height:1.5;">
   <strong style="display:block; margin-bottom:8px; font-size:15px; color:#222;">Instructions:</strong>
@@ -167,7 +163,7 @@ background: #1e40af; s
     <a href="#" id="downloadExample" style="color:#4a90e2; text-decoration:none; font-weight:bold;">Download Example Spreadsheet</a>
   </p>
 </div>
-
+</div>
 <script>
 document.getElementById("downloadExample").addEventListener("click", function(e){
   e.preventDefault();
@@ -176,11 +172,7 @@ document.getElementById("downloadExample").addEventListener("click", function(e)
     {StoreName:"Branch 1", A1:2,A2:0,A3:1,A4:0,A5:3,A6:1,A7:0,A8:2,A9:1,A10:0,A11:0,A12:1,
      B1:0,B2:1,B3:1,B4:0,B5:2,B6:1,B7:0,B8:2,B9:1,B10:0,B11:1,B12:0},
     {StoreName:"Branch 2", A1:0,A2:1,A3:0,A4:2,A5:1,A6:0,A7:2,A8:1,A9:3,A10:0,A11:1,A12:0,
-     B1:1,B2:0,B3:2,B4:1,B5:0,B6:1,B7:0,B8:1,B9:2,B10:1,B11:0,B12:1},
-    {StoreName:"Branch 3", A1:1,A2:2,A3:0,A4:1,A5:0,A6:2,A7:1,A8:0,A9:1,A10:2,A11:0,A12:1,
-     B1:2,B2:1,B3:0,B4:2,B5:1,B6:0,B7:1,B8:2,B9:0,B10:1,B11:2,B12:0},
-    {StoreName:"Branch 4", A1:0,A2:1,A3:2,A4:1,A5:0,A6:1,A7:2,A8:0,A9:1,A10:0,A11:1,A12:2,
-     B1:1,B2:0,B3:1,B4:0,B5:2,B6:1,B7:0,B8:1,B9:2,B10:0,B11:1,B12:0}
+     B1:1,B2:0,B3:2,B4:1,B5:0,B6:1,B7:0,B8:1,B9:2,B10:1,B11:0,B12:1}
   ];
 
   const wb = XLSX.utils.book_new();
@@ -195,8 +187,50 @@ document.getElementById("downloadExample").addEventListener("click", function(e)
 
 <script>
 let selectedFile;
+let workbook;
+
+const sheetSelect = document.getElementById("sheetSelect");
+const processBtn = document.getElementById("processBtn");
+
 document.getElementById("inputFile").addEventListener("change", e => {
   selectedFile = e.target.files[0];
+  sheetSelect.innerHTML = '<option value="">Loading sheets...</option>';
+  sheetSelect.disabled = true;
+  processBtn.disabled = true;
+
+  if (!selectedFile) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      workbook = XLSX.read(data, { type: "array" });
+      const sheetNames = workbook.SheetNames;
+
+      sheetSelect.innerHTML = "";
+      sheetNames.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        sheetSelect.appendChild(opt);
+      });
+
+      sheetSelect.disabled = false;
+      if (sheetNames.length > 0) {
+        sheetSelect.value = sheetNames[0]; // auto-select first sheet
+        processBtn.disabled = false;
+      }
+
+    } catch (err) {
+      sheetSelect.innerHTML = '<option value="">Error loading sheets</option>';
+      console.error("Error reading workbook:", err);
+    }
+  };
+  reader.readAsArrayBuffer(selectedFile);
+});
+
+sheetSelect.addEventListener("change", e => {
+  processBtn.disabled = !e.target.value;
 });
 
 function createCSV(data, headers) {
@@ -208,8 +242,23 @@ function createCSV(data, headers) {
 }
 
 function downloadBlob(content, fileName) {
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-  saveAs(blob, fileName);
+  try {
+    // Convert all line endings to Windows-style CRLF
+    const windowsContent = content.replace(/\n/g, "\r\n");
+
+    // Encode as Windows-1252 (ANSI)
+    const encoder = new TextEncoder("windows-1252", { NONSTANDARD_allowLegacyEncoding: true });
+    const encoded = encoder.encode(windowsContent);
+
+    // Save as Windows CSV
+    const blob = new Blob([encoded], { type: "text/csv;charset=windows-1252;" });
+    saveAs(blob, fileName);
+  } catch (e) {
+    console.warn("Windows-1252 encoding not supported, falling back to UTF-8");
+    const windowsContent = content.replace(/\n/g, "\r\n");
+    const blob = new Blob([windowsContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, fileName);
+  }
 }
 
 function exportExcel(logData) {
@@ -222,10 +271,12 @@ function exportExcel(logData) {
 
 document.getElementById("processBtn").onclick = function() {
   const statusDiv = document.getElementById("status");
-  if (!selectedFile) {
-    statusDiv.textContent = "Select a file first";
+  const selectedSheet = sheetSelect.value;
+  if (!selectedSheet) {
+    statusDiv.textContent = "Please select a sheet first.";
     return;
   }
+
   statusDiv.textContent = "Processing...";
   const progressContainer = document.getElementById("progressContainer");
   const progressBar = document.getElementById("progressBar");
@@ -235,17 +286,10 @@ document.getElementById("processBtn").onclick = function() {
   const splitSize = parseInt(document.getElementById("splitSize").value) || 0;
   const reverse = document.getElementById("reverseRows").checked;
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
+  try {
+      const ws = workbook.Sheets[selectedSheet];
       let json = XLSX.utils.sheet_to_json(ws, { defval: "" });
       if (json.length === 0) { statusDiv.textContent = "Empty sheet"; return; }
-
-      // DO NOT remove the first row
-      // json.shift();
 
       const headers = Object.keys(json[0]).map(h => h.trim());
       const storeCol = headers.find(h => h.toUpperCase() === "STORENAME");
@@ -275,37 +319,34 @@ document.getElementById("processBtn").onclick = function() {
           const dataOut = [];
           let index = 0;
 
-  // START row
-const startRow = { Index: index, [storeCol]: `"START"` }; // double quotes
-allCols.forEach(c => startRow[c] = 0);
-startRow["Flag"] = 1;
-dataOut.push(startRow);
+          const startRow = { Index: index, [storeCol]: `"START"` };
+          allCols.forEach(c => startRow[c] = 0);
+          startRow["Flag"] = 1;
+          dataOut.push(startRow);
 
-// Data rows
-chunk.forEach(r => {
-  index++;
-  const row = { Index: index, [storeCol]: `"${r[storeCol]}"` }; // double quotes for branch
-  allCols.forEach(c => {
-    const mergedHeader = validHeaders.find(h => {
-      const upper = h.toUpperCase();
-      return upper.length >= 4 && upper.includes(c);
-    });
-    if (mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "") {
-      row[c] = r[mergedHeader];
-    } else {
-      row[c] = r[c] !== undefined && r[c] !== "" ? r[c] : 0;
-    }
-  });
-  row["Flag"] = 1;
-  dataOut.push(row);
-});
+          chunk.forEach(r => {
+            index++;
+            const row = { Index: index, [storeCol]: `"${r[storeCol]}"` };
+            allCols.forEach(c => {
+              const mergedHeader = validHeaders.find(h => {
+                const upper = h.toUpperCase();
+                return upper.length >= 4 && upper.includes(c);
+              });
+              if (mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "") {
+                row[c] = r[mergedHeader];
+              } else {
+                row[c] = r[c] !== undefined && r[c] !== "" ? r[c] : 0;
+              }
+            });
+            row["Flag"] = 1;
+            dataOut.push(row);
+          });
 
-// END row
-index++;
-const endRow = { Index: index, [storeCol]: `"END"` }; // double quotes
-allCols.forEach(c => endRow[c] = 0);
-endRow["Flag"] = 0;
-dataOut.push(endRow);
+          index++;
+          const endRow = { Index: index, [storeCol]: `"END"` };
+          allCols.forEach(c => endRow[c] = 0);
+          endRow["Flag"] = 0;
+          dataOut.push(endRow);
 
           const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]);
           let fileName = selectedFile.name.replace(/\.[^/.]+$/, "") + " - " + letter;
@@ -331,12 +372,10 @@ dataOut.push(endRow);
         progressBar.style.width = "0%";
       }, 1000);
 
-    } catch (err) {
+  } catch (err) {
       statusDiv.textContent = "Error: " + err.message;
       console.error(err);
-    }
-  };
-  reader.readAsArrayBuffer(selectedFile);
+  }
 };
 </script>
 </body>
