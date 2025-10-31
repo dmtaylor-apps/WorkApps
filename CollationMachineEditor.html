@@ -7,7 +7,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
  body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
-
  header { background: #0f172a; color: white; padding: 1rem; text-align: center; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
  header svg { width: 32px; height: 32px; fill: white; }
 
@@ -15,105 +14,45 @@
   padding: 30px 40px;
   border-radius: 16px;
   text-align: center;
-  max-width: 500px;
+  max-width: 700px;
   width: 100%;
   margin: 0 auto;
  }
 
-  h2 {
-    margin-bottom: 20px;
-    color: #333333;
-  }
-  input[type="file"], select {
-    width: 90%;
-    padding: 8px 12px;
-    border-radius: 12px;
-    border: 1px solid #ccc;
-    margin: 10px 0;
-    font-size: 14px;
-  }
-  input[type="number"] {
-    width: 100px;
-    padding: 6px 10px;
-    border-radius: 12px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    margin-left: 10px;
-    margin-right: 10px;
-  }
-  label {
-    display: inline-block;
-    margin: 10px 0;
-    font-weight: 500;
-    font-size: 14px;
-    vertical-align: middle;
-  }
-  .checkbox-container {
-    display: inline-block;
-    position: relative;
-    padding-left: 35px;
-    margin: 10px 0;
-    cursor: pointer;
-    user-select: none;
-    font-size: 14px;
-  }
-  .checkbox-container input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0; width: 0;
-  }
-  .checkmark {
-    position: absolute;
-    top: 0; left: 0;
-    height: 20px; width: 20px;
-    background-color: #eee;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-  }
-  .checkbox-container:hover input ~ .checkmark { background-color: #ddd; }
-  .checkbox-container input:checked ~ .checkmark {
-    background-color: #4a90e2;
-  }
-  .checkmark:after {
-    content: "";
-    position: absolute;
-    display: none;
-  }
-  .checkbox-container input:checked ~ .checkmark:after {
-    display: block;
-  }
-  .checkbox-container .checkmark:after {
-    left: 6px; top: 2px;
-    width: 5px; height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-  }
-  button {
-    background: #2563eb; color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer;
-  }
-  button:hover { background: #1e40af; }
-  button:disabled { background: #94a3b8; cursor: not-allowed; }
-  #status {
-    margin-top: 15px;
-    font-weight: bold;
-    font-size: 14px;
-  }
-  #progressContainer {
-    width: 100%;
-    background: #ddd;
-    border-radius: 12px;
-    margin-top: 15px;
-    display: none;
-  }
-  #progressBar {
-    width: 0%;
-    height: 20px;
-    background: #4a90e2;
-    border-radius: 12px;
-    transition: width 0.3s ease;
-  }
+ input[type="file"], select {
+   width: 90%;
+   padding: 8px 12px;
+   border-radius: 12px;
+   border: 1px solid #ccc;
+   margin: 10px 0;
+   font-size: 14px;
+ }
+ input[type="number"] {
+   width: 100px;
+   padding: 6px 10px;
+   border-radius: 12px;
+   border: 1px solid #ccc;
+   font-size: 14px;
+   margin-left: 10px;
+   margin-right: 10px;
+ }
+ .checkbox-container { display:inline-block; position:relative; padding-left:35px; margin:10px 0; cursor:pointer; user-select:none; font-size:14px; }
+ .checkbox-container input { position:absolute; opacity:0; cursor:pointer; height:0; width:0; }
+ .checkmark { position:absolute; top:0; left:0; height:20px; width:20px; background:#eee; border-radius:6px; border:1px solid #ccc; }
+ .checkbox-container input:checked ~ .checkmark { background:#4a90e2; }
+ .checkmark:after { content:""; position:absolute; display:none; }
+ .checkbox-container input:checked ~ .checkmark:after { display:block; }
+ .checkbox-container .checkmark:after { left:6px; top:2px; width:5px; height:10px; border:solid white; border-width:0 2px 2px 0; transform:rotate(45deg); }
+
+ button { background: #2563eb; color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; }
+ button:hover { background: #1e40af; }
+ button:disabled { background: #94a3b8; cursor: not-allowed; }
+
+ #status { margin-top: 15px; font-weight: bold; font-size: 14px; text-align:left; }
+ #progressContainer { width: 100%; background: #ddd; border-radius: 12px; margin-top: 15px; display: none; }
+ #progressBar { width: 0%; height: 20px; background: #4a90e2; border-radius: 12px; transition: width 0.3s ease; }
+
+ .instructions { text-align:left; margin-bottom:20px; margin-top:40px; font-size:14px; color:#333; background:#f7f7f7; padding:15px 20px; border-radius:12px; border:1px solid #ddd; line-height:1.5; }
 </style>
 </head>
 <body>
@@ -123,71 +62,107 @@
 </header>
 
 <div class="container">
-  	<input type="file" id="inputFile" accept=".xlsx,.xls" /><br>
+  <input type="file" id="inputFile" accept=".xlsx,.xls" /><br>
 
-    <!-- New Sheet Selector (same style as inputs) -->
-    <select id="sheetSelect" disabled>
-      <option value="">-- Select Sheet --</option>
-    </select><br>
+  <select id="sheetSelect" disabled>
+    <option value="">-- Select Sheet --</option>
+  </select><br>
 
-	<label>Split size (optional, 0 = no split):
-		<input type="number" id="splitSize" min="0" placeholder="0 = no split">
-	</label>
-	<label class="checkbox-container">Reverse rows
-		<input type="checkbox" id="reverseRows">
-		<span class="checkmark"></span>
-	</label>
-	<br>
-	<button id="processBtn" disabled>Process Excel</button>
+  <label>Split size (optional, 0 = no split):
+    <input type="number" id="splitSize" min="0" placeholder="0 = no split">
+  </label>
+  <label class="checkbox-container">Reverse rows
+    <input type="checkbox" id="reverseRows">
+    <span class="checkmark"></span>
+  </label>
+  <br>
+  <button id="processBtn" disabled>Process Excel</button>
 
-	<div id="progressContainer"><div id="progressBar"></div></div>
-	<div id="status"></div>
+  <div id="progressContainer"><div id="progressBar"></div></div>
+  ...
+  <div id="status"></div>
 
+  <div class="instructions">
+    <strong style="display:block; margin-bottom:8px; font-size:15px; color:#222;">How to Use the Collation Splitter Tool</strong>
+    <ol style="padding-left:20px; margin:0; line-height:1.6;">
+      <li><strong>Upload your Excel file</strong> (.xlsx or .xls).  
+          The tool will automatically read all sheets and list them in the dropdown.</li>
+      <li><strong>Select the sheet</strong> you want to process from the dropdown menu.</li>
+      <li>Optional: Enter a <strong>Split size</strong> to break large sheets into smaller files.  
+          (e.g. 100 → each CSV will contain 100 rows. Leave blank or 0 for no split.)</li>
+      <li>Optional: Check <strong>Reverse rows</strong> if you want the data order flipped before exporting.</li>
+      <li>Click <strong>Process Excel</strong> to begin validation and export.</li>
+    </ol>
 
-<div style="text-align:left; margin-bottom:20px; font-size:14px; color:#333; background:#f7f7f7; padding:15px 20px; border-radius:12px; border:1px solid #ddd; line-height:1.5;">
-  <strong style="display:block; margin-bottom:8px; font-size:15px; color:#222;">Instructions:</strong>
-  <ol style="padding-left:20px; margin:0;">
-    <li><strong>StoreName column:</strong> Use the Header 'StoreName' to differentiate each store. Must be text-based; e.g., "Branch 1".</li>
-    <li><strong>Data columns:</strong> Label using <strong>LetterNumber</strong> format, e.g., <strong>A1, A2, B3</strong>, up to <strong>Z12</strong>.</li>
-    <li><strong>Paired columns:</strong> For values that fill two columns, name the column <strong>A1A2</strong> (or similar). Both columns will get the same value.</li>
-    <li>Any other columns not following this format will be ignored.</li>
-    <li>The top header row will be automatically removed when exported.</li>
-    <li>Optionally set a split size to divide large sheets into multiple CSVs. Leave as 0 if not needed.</li>
-    <li>Check "Reverse rows" if you want the bottom row to appear first within each split.</li>
-  </ol>
-</div>
+    <hr style="margin:15px 0; border:none; border-top:1px solid #ddd;">
 
-<div style="text-align:left; margin-bottom:20px; font-size:14px; color:#333;">
-  <strong>Example spreadsheet:</strong>
-  <p>
-    <a href="#" id="downloadExample" style="color:#4a90e2; text-decoration:none; font-weight:bold;">Download Example Spreadsheet</a>
+ <p style="margin:0 0 6px;"><strong>✅ Header Rules (Collation Machine Layout):</strong></p>
+<ul style="margin:0 0 10px 20px; padding:0; line-height:1.6;">
+  <li>The collation machine has <strong>12 feeder slots</strong>. Each slot is represented by a number from <code>1</code> to <code>12</code>.</li>
+  <li>Each <strong>letter group</strong> (A, B, C, etc.) represents one full collation run or pass through the machine.</li>
+  <li>Therefore:
+    <ul style="margin:5px 0 0 20px;">
+      <li><strong>A1–A12</strong> → Slots 1–12 for the first run (Run A).</li>
+      <li><strong>B1–B12</strong> → Slots 1–12 for the second run (Run B).</li>
+      <li><strong>C1–C12</strong> → Slots 1–12 for the third run (Run C).</li>
+    </ul>
+  </li>
+  <li>If a large insert needs two pickup points, you can <strong>combine adjacent slots</strong> such as <code>A1A2</code> or <code>B3B4</code>.  
+      These paired headers represent a double feeder grab.</li>
+  <li>Each slot number must be between <strong>1</strong> and <strong>12</strong>.  
+      Anything higher (like <code>A13</code>) is invalid — the machine only has 12 slots.</li>
+  <li>Each row represents one store or job, with the quantity to feed from each slot shown as a number (e.g. 0, 1, 2).</li>
+  <li>You must include a <strong>StoreName</strong> column, and it must contain a value on every row.</li>
+</ul>
+
+<div style="background:#f9fafb; border:1px solid #ddd; border-radius:8px; padding:10px 15px; margin-top:8px;">
+  <strong>Example Header Layout:</strong><br>
+  <table style="width:100%; border-collapse:collapse; margin-top:6px; font-size:13px; text-align:center;">
+    <tr style="background:#f1f5f9;">
+      <th style="border:1px solid #ddd; padding:4px;">StoreName</th>
+      <th style="border:1px solid #ddd; padding:4px;">A1</th>
+      <th style="border:1px solid #ddd; padding:4px;">A2</th>
+      <th style="border:1px solid #ddd; padding:4px;">A3</th>
+      <th style="border:1px solid #ddd; padding:4px;">...</th>
+      <th style="border:1px solid #ddd; padding:4px;">A12</th>
+      <th style="border:1px solid #ddd; padding:4px;">B1</th>
+      <th style="border:1px solid #ddd; padding:4px;">...</th>
+      <th style="border:1px solid #ddd; padding:4px;">B12</th>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ddd; padding:4px;">Store A</td>
+      <td style="border:1px solid #ddd; padding:4px;">1</td>
+      <td style="border:1px solid #ddd; padding:4px;">2</td>
+      <td style="border:1px solid #ddd; padding:4px;">0</td>
+      <td style="border:1px solid #ddd; padding:4px;">...</td>
+      <td style="border:1px solid #ddd; padding:4px;">1</td>
+      <td style="border:1px solid #ddd; padding:4px;">1</td>
+      <td style="border:1px solid #ddd; padding:4px;">...</td>
+      <td style="border:1px solid #ddd; padding:4px;">0</td>
+    </tr>
+  </table>
+  <p style="margin:6px 0 0; font-size:13px; color:#555;">
+    Each number represents how many items the machine should feed from that slot for the given store.  
+    For example, “A1 = 1” means feed 1 item from Slot 1 on Run A.
   </p>
 </div>
-</div>
-<script>
-document.getElementById("downloadExample").addEventListener("click", function(e){
-  e.preventDefault();
-  
-  const exampleData = [
-    {StoreName:"Branch 1", A1:2,A2:0,A3:1,A4:0,A5:3,A6:1,A7:0,A8:2,A9:1,A10:0,A11:0,A12:1,
-     B1:0,B2:1,B3:1,B4:0,B5:2,B6:1,B7:0,B8:2,B9:1,B10:0,B11:1,B12:0},
-    {StoreName:"Branch 2", A1:0,A2:1,A3:0,A4:2,A5:1,A6:0,A7:2,A8:1,A9:3,A10:0,A11:1,A12:0,
-     B1:1,B2:0,B3:2,B4:1,B5:0,B6:1,B7:0,B8:1,B9:2,B10:1,B11:0,B12:1}
-  ];
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(exampleData);
-  XLSX.utils.book_append_sheet(wb, ws, "Example");
-  
-  const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-  const blob = new Blob([wbout], {type:"application/octet-stream"});
-  saveAs(blob, "ExampleSpreadsheet.xlsx");
-});
-</script>
+
+
+    <p style="margin:10px 0 6px;"><strong>📦 Output:</strong></p>
+    <ul style="margin:0 0 10px 20px; padding:0; line-height:1.6;">
+      <li>Generates one or more <strong>CSV files</strong> — one per letter group (A, B, C…).</li>
+      <li>Each file begins with a <code>"START"</code> row and ends with an <code>"END"</code> row.</li>
+      <li>Also downloads a detailed <strong>ExportLog.xlsx</strong> with file info, store counts, and validation notes.</li>
+    </ul>
+
+    <p style="color:#666; font-size:13px; margin-top:10px;">💡 Tip: If the tool shows errors, scroll down to see which rows or headers need fixing before retrying.</p>
+  </div>
+  <!-- 🔼 End of replacement -->
+
 
 <script>
-let selectedFile;
-let workbook;
+let selectedFile, workbook;
 
 const sheetSelect = document.getElementById("sheetSelect");
 const processBtn = document.getElementById("processBtn");
@@ -195,18 +170,17 @@ const processBtn = document.getElementById("processBtn");
 document.getElementById("inputFile").addEventListener("change", e => {
   selectedFile = e.target.files[0];
   sheetSelect.innerHTML = '<option value="">Loading sheets...</option>';
+  document.getElementById("status").innerHTML = "";
   sheetSelect.disabled = true;
   processBtn.disabled = true;
-
   if (!selectedFile) return;
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = ev => {
     try {
-      const data = new Uint8Array(e.target.result);
+      const data = new Uint8Array(ev.target.result);
       workbook = XLSX.read(data, { type: "array" });
       const sheetNames = workbook.SheetNames;
-
       sheetSelect.innerHTML = "";
       sheetNames.forEach(name => {
         const opt = document.createElement("option");
@@ -214,16 +188,14 @@ document.getElementById("inputFile").addEventListener("change", e => {
         opt.textContent = name;
         sheetSelect.appendChild(opt);
       });
-
       sheetSelect.disabled = false;
       if (sheetNames.length > 0) {
-        sheetSelect.value = sheetNames[0]; // auto-select first sheet
+        sheetSelect.value = sheetNames[0];
         processBtn.disabled = false;
       }
-
     } catch (err) {
       sheetSelect.innerHTML = '<option value="">Error loading sheets</option>';
-      console.error("Error reading workbook:", err);
+      console.error(err);
     }
   };
   reader.readAsArrayBuffer(selectedFile);
@@ -233,32 +205,51 @@ sheetSelect.addEventListener("change", e => {
   processBtn.disabled = !e.target.value;
 });
 
+// ✅ Reusable error display
+function showErrorSummary({ title = "Error", rows = [], extraNote = "", limit = 50 }) {
+  const statusDiv = document.getElementById("status");
+  const statusSpan = document.getElementById("statusSpan");
+  if (statusSpan) statusSpan.textContent = `❌ ${title}`;
+  const limitedRows = rows.slice(0, limit);
+  const rowsHTML = limitedRows.map(r =>
+    typeof r === "string" ? r : `Row ${r.RowNumber}: Missing ${r.MissingColumns}`).join("<br>");
+  statusDiv.innerHTML = `
+    <div id="headerSummary" style="text-align:left; line-height:1.6; margin-top:10px;">
+      ❌ <strong>${title}:</strong><br>
+      ${rowsHTML ? `<div style="color:red; margin-left:15px;">${rowsHTML}</div>` : ""}
+      ${rows.length > limit ? "<div style='margin-left:15px;'><em> (showing first 50 only)</em></div>" : ""}
+      ${extraNote ? `<div style="color:red; margin-left:15px; margin-top:5px;">${extraNote}</div>` : ""}
+    </div>`;
+  document.getElementById("progressContainer").style.display = "none";
+}
+
+function buildSummaryHTML({ statusText = "Analyzing headers...", validHeaders = [], unusedHeaders = [], overLimitHeaders = [], invalidPairs = [] }) {
+  let html = `<div id="headerSummary" style="text-align:left; line-height:1.6; margin-top:10px;">`;
+  html += `<div><strong>Status:</strong> <span id="statusSpan" style="color:#2563eb;">${statusText}</span></div><br>`;
+  if (overLimitHeaders.length || invalidPairs.length) {
+    html += `❌ <strong>Invalid Headers:</strong><br>`;
+    if (overLimitHeaders.length)
+      html += `<div style="color:red; margin-left:15px;">${overLimitHeaders.join(", ")}</div><br>`;
+    if (invalidPairs.length)
+      html += `<div style="color:red; margin-left:15px;">${invalidPairs.join(", ")}</div><br>`;
+  }
+  html += `✅ <strong>Valid Fields:</strong><br><div style="color:green; margin-left:15px;">${validHeaders.join(", ") || "(none)"}</div><br>`;
+  html += `⚠️ <strong>Unused Fields:</strong><br><div style="color:#d97706; margin-left:15px;">${unusedHeaders.join(", ") || "(none)"}</div><br>`;
+  html += `</div>`;
+  return html;
+}
+
 function createCSV(data, headers) {
   const rows = [];
-  data.forEach(r => {
-    rows.push(headers.map(h => r[h] ?? "").join(","));
-  });
+  data.forEach(r => rows.push(headers.map(h => r[h] ?? "").join(",")));
   return rows.join("\n");
 }
 
 function downloadBlob(content, fileName) {
-  try {
-    // Convert all line endings to Windows-style CRLF
-    const windowsContent = content.replace(/\n/g, "\r\n");
-
-    // Encode as Windows-1252 (ANSI)
-    const encoder = new TextEncoder("windows-1252", { NONSTANDARD_allowLegacyEncoding: true });
-    const encoded = encoder.encode(windowsContent);
-
-    // Save as Windows CSV
-    const blob = new Blob([encoded], { type: "text/csv;charset=windows-1252;" });
-    saveAs(blob, fileName);
-  } catch (e) {
-    console.warn("Windows-1252 encoding not supported, falling back to UTF-8");
-    const windowsContent = content.replace(/\n/g, "\r\n");
-    const blob = new Blob([windowsContent], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, fileName);
-  }
+  const windowsContent = content.replace(/\n/g, "\r\n");
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + windowsContent], { type: "text/csv;charset=utf-8;" });
+  saveAs(blob, fileName);
 }
 
 function exportExcel(logData) {
@@ -269,15 +260,10 @@ function exportExcel(logData) {
   saveAs(new Blob([wbout], { type: "application/octet-stream" }), "ExportLog.xlsx");
 }
 
-document.getElementById("processBtn").onclick = function() {
+document.getElementById("processBtn").onclick = async function() {
   const statusDiv = document.getElementById("status");
   const selectedSheet = sheetSelect.value;
-  if (!selectedSheet) {
-    statusDiv.textContent = "Please select a sheet first.";
-    return;
-  }
-
-  statusDiv.textContent = "Processing...";
+  if (!selectedSheet) return (statusDiv.textContent = "Please select a sheet first.");
   const progressContainer = document.getElementById("progressContainer");
   const progressBar = document.getElementById("progressBar");
   progressContainer.style.display = "block";
@@ -287,94 +273,143 @@ document.getElementById("processBtn").onclick = function() {
   const reverse = document.getElementById("reverseRows").checked;
 
   try {
-      const ws = workbook.Sheets[selectedSheet];
-      let json = XLSX.utils.sheet_to_json(ws, { defval: "" });
-      if (json.length === 0) { statusDiv.textContent = "Empty sheet"; return; }
+    const ws = workbook.Sheets[selectedSheet];
+    let json = XLSX.utils.sheet_to_json(ws, { defval: "" });
+    if (!json.length) return (statusDiv.textContent = "Empty sheet", progressContainer.style.display = "none");
 
-      const headers = Object.keys(json[0]).map(h => h.trim());
-      const storeCol = headers.find(h => h.toUpperCase() === "STORENAME");
-      if (!storeCol) { statusDiv.textContent = "No StoreName column"; return; }
+    // Validate headers
+    const headers = Object.keys(json[0]).map(h => h.trim());
+    const storeCol = headers.find(h => h.toLowerCase() === "storename");
+    if (!storeCol) return showErrorSummary({ title: "No StoreName column found" });
 
-      const validHeaders = headers.filter(h =>
-        /^[A-Z](1[0-2]|[1-9])$/.test(h.toUpperCase()) ||
-        /^[A-Z](1[0-2]|[1-9])[A-Z](1[0-2]|[1-9])$/.test(h.toUpperCase())
-      );
-      const letters = [...new Set(validHeaders.map(h => h[0].toUpperCase()))];
-      if (letters.length === 0) { statusDiv.textContent = "No valid letter headers found"; return; }
+    const validHeaders = [], overLimitHeaders = [], invalidPairs = [], unusedHeaders = [];
+    const allowedPairs = [[1,2],[3,4],[5,6],[7,8],[9,10],[11,12]];
 
-      const logData = [];
-      const totalSteps = letters.length * (splitSize > 0 ? Math.ceil(json.length / splitSize) : 1);
-      let currentStep = 0;
+    headers.forEach(h => {
+      if (!h || h.toLowerCase() === "storename") return;
+      const upper = h.toUpperCase();
+      const pair = upper.match(/^([A-Z])(\d{1,2})([A-Z])(\d{1,2})$/);
+      if (pair) {
+        const [, l1, n1s, l2, n2s] = pair;
+        const n1 = +n1s, n2 = +n2s;
+        if (n1 > 12 || n2 > 12) return overLimitHeaders.push(h);
+        if (l1 !== l2 || !allowedPairs.some(([a,b]) => a===n1 && b===n2)) return invalidPairs.push(h);
+        return validHeaders.push(h);
+      }
+      const single = upper.match(/^([A-Z])(\d{1,2})$/);
+      if (single) {
+        const n = +single[2];
+        if (n > 12) return overLimitHeaders.push(h);
+        return validHeaders.push(h);
+      }
+      unusedHeaders.push(h);
+    });
 
-      letters.forEach(letter => {
-        const allCols = [];
-        for (let i = 1; i <= 12; i++) allCols.push(letter + i);
+    statusDiv.innerHTML = buildSummaryHTML({ statusText: "Analyzing headers...", validHeaders, unusedHeaders, overLimitHeaders, invalidPairs });
+    if (overLimitHeaders.length || invalidPairs.length)
+      return showErrorSummary({ title: "Invalid headers detected", rows: [...overLimitHeaders, ...invalidPairs] });
 
-        const chunks = splitSize > 0 ? Array.from({length: Math.ceil(json.length / splitSize)}, (_, i) =>
-          json.slice(i*splitSize, (i+1)*splitSize)
-        ) : [json];
-
-        chunks.forEach((chunk, idx) => {
-          if (reverse) chunk.reverse();
-          const dataOut = [];
-          let index = 0;
-
-          const startRow = { Index: index, [storeCol]: `"START"` };
-          allCols.forEach(c => startRow[c] = 0);
-          startRow["Flag"] = 1;
-          dataOut.push(startRow);
-
-          chunk.forEach(r => {
-            index++;
-            const row = { Index: index, [storeCol]: `"${r[storeCol]}"` };
-            allCols.forEach(c => {
-              const mergedHeader = validHeaders.find(h => {
-                const upper = h.toUpperCase();
-                return upper.length >= 4 && upper.includes(c);
-              });
-              if (mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "") {
-                row[c] = r[mergedHeader];
-              } else {
-                row[c] = r[c] !== undefined && r[c] !== "" ? r[c] : 0;
-              }
-            });
-            row["Flag"] = 1;
-            dataOut.push(row);
-          });
-
-          index++;
-          const endRow = { Index: index, [storeCol]: `"END"` };
-          allCols.forEach(c => endRow[c] = 0);
-          endRow["Flag"] = 0;
-          dataOut.push(endRow);
-
-          const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]);
-          let fileName = selectedFile.name.replace(/\.[^/.]+$/, "") + " - " + letter;
-          if (chunks.length > 1) fileName += ` (part${idx+1})`;
-          fileName += ".csv";
-          downloadBlob(csv, fileName);
-
-          logData.push({ Letter: letter, Part: idx+1, RowsExported: dataOut.length, File: fileName });
-
-          currentStep++;
-          progressBar.style.width = Math.round((currentStep / totalSteps) * 100) + "%";
-        });
+    // Validate missing data
+    const rowsWithMissing = [];
+    json.forEach((row, i) => {
+      const missing = [];
+      const required = [storeCol, ...validHeaders];
+      required.forEach(col => {
+        const v = row[col];
+        if (v === undefined || v === null || String(v).trim() === "") missing.push(col);
       });
+      if (missing.length) rowsWithMissing.push({ RowNumber: i + 2, MissingColumns: missing.join(", ") });
+    });
 
-      exportExcel(logData);
-      statusDiv.textContent = "Export complete! CSVs and log downloaded.";
+    if (rowsWithMissing.length)
+      return showErrorSummary({ title: "Missing data detected", rows: rowsWithMissing, extraNote: "Please ensure all required cells contain values." });
 
-      document.getElementById("inputFile").value = "";
-      selectedFile = null;
+    // ✅ All validations passed
+    document.getElementById("statusSpan").textContent = "Processing...";
+    await new Promise(r => setTimeout(r, 200));
 
-      setTimeout(() => {
-        progressContainer.style.display = "none";
-        progressBar.style.width = "0%";
-      }, 1000);
+    const letters = [...new Set(validHeaders.map(h => h[0].toUpperCase()))];
+    const logData = [];
+    const totalSteps = letters.length * (splitSize > 0 ? Math.ceil(json.length / splitSize) : 1);
+    let currentStep = 0;
 
+    for (const letter of letters) {
+      const allCols = [];
+      for (let i = 1; i <= 12; i++) allCols.push(letter + i);
+
+      const chunks = splitSize > 0
+        ? Array.from({length: Math.ceil(json.length / splitSize)}, (_, i) => json.slice(i*splitSize, (i+1)*splitSize))
+        : [json];
+
+      for (let idx = 0; idx < chunks.length; idx++) {
+        const chunk = reverse ? [...chunks[idx]].reverse() : chunks[idx];
+        const dataOut = [];
+        let index = 0;
+        const startRow = { Index: index, [storeCol]: `"START"` };
+        allCols.forEach(c => startRow[c] = 0);
+        startRow["Flag"] = 1;
+        dataOut.push(startRow);
+
+        chunk.forEach(r => {
+          index++;
+          const row = { Index: index, [storeCol]: `"${r[storeCol]}"` };
+          allCols.forEach(c => {
+            const mergedHeader = validHeaders.find(h => h.toUpperCase().includes(c.toUpperCase()));
+            if (mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "") {
+              row[c] = r[mergedHeader];
+            } else {
+              row[c] = r[c] !== undefined && r[c] !== "" ? r[c] : 0;
+            }
+          });
+          row["Flag"] = 1;
+          dataOut.push(row);
+        });
+
+        index++;
+        const endRow = { Index: index, [storeCol]: `"END"` };
+        allCols.forEach(c => endRow[c] = 0);
+        endRow["Flag"] = 0;
+        dataOut.push(endRow);
+
+        const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]);
+
+        let baseName = selectedFile.name.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "").replace(/_+/g, "_").replace(/^_+|_+$/g, "") || "Output";
+        let fileName = `${baseName}_${letter}`;
+        if (chunks.length > 1) fileName += `_part${idx + 1}`;
+        fileName += ".csv";
+        downloadBlob(csv, fileName);
+
+logData.push({
+  Timestamp: new Date().toLocaleString(),
+  SourceFile: selectedFile.name,
+  Sheet: selectedSheet,
+  LetterGroup: letter,
+  Part: idx + 1,
+  RowsExported: dataOut.length,
+  StartRow: idx * splitSize + 2,
+  EndRow: Math.min((idx + 1) * splitSize + 1, json.length + 1),
+  StoresIncluded: [...new Set(chunk.map(r => r[storeCol]))].join(", "),
+  Reversed: reverse ? "Yes" : "No",
+  FileName: fileName,
+  Notes:
+    (unusedHeaders.length ? `Unused: ${unusedHeaders.join(", ")}` : "OK") +
+    (overLimitHeaders.length ? ` | OverLimit: ${overLimitHeaders.join(", ")}` : "") +
+    (invalidPairs.length ? ` | InvalidPairs: ${invalidPairs.join(", ")}` : "")
+});
+
+      }
+    }
+
+    exportExcel(logData);
+    const s = document.getElementById("statusSpan");
+    if (s) s.textContent = "✅ Complete";
+    const successHTML = `<div id="successBanner" style="margin-bottom:10px; color:green; font-weight:bold;">✅ Export complete! CSVs and log downloaded.</div>`;
+    statusDiv.insertAdjacentHTML("afterbegin", successHTML);
+    setTimeout(() => progressContainer.style.display = "none", 800);
   } catch (err) {
-      statusDiv.textContent = "Error: " + err.message;
-      console.error(err);
+    statusDiv.innerHTML = `<span style="color:red;">Error: ${err.message}</span>`;
+    console.error(err);
+    progressContainer.style.display = "none";
   }
 };
 </script>
