@@ -309,20 +309,6 @@ document.getElementById("processBtn").onclick = async function() {
     if (overLimitHeaders.length || invalidPairs.length)
       return showErrorSummary({ title: "Invalid headers detected", rows: [...overLimitHeaders, ...invalidPairs] });
 
-    // Validate missing data
-    const rowsWithMissing = [];
-    json.forEach((row, i) => {
-      const missing = [];
-      const required = [storeCol, ...validHeaders];
-      required.forEach(col => {
-        const v = row[col];
-        if (v === undefined || v === null || String(v).trim() === "") missing.push(col);
-      });
-      if (missing.length) rowsWithMissing.push({ RowNumber: i + 2, MissingColumns: missing.join(", ") });
-    });
-
-    if (rowsWithMissing.length)
-      return showErrorSummary({ title: "Missing data detected", rows: rowsWithMissing, extraNote: "Please ensure all required cells contain values." });
 
     // ✅ All validations passed
     document.getElementById("statusSpan").textContent = "Processing...";
