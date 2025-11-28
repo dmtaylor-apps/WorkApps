@@ -153,7 +153,6 @@
     <ul style="margin:0 0 10px 20px; padding:0; line-height:1.6;">
       <li>Generates one or more <strong>CSV files</strong> — one per letter group (A, B, C…).</li>
       <li>Each file begins with a <code>"START"</code> row and ends with an <code>"END"</code> row.</li>
-      <li>Also downloads a detailed <strong>ExportLog.xlsx</strong> with file info, store counts, and validation notes.</li>
     </ul>
 
     <p style="color:#666; font-size:13px; margin-top:10px;">💡 Tip: If the tool shows errors, scroll down to see which rows or headers need fixing before retrying.</p>
@@ -252,13 +251,7 @@ function downloadBlob(content, fileName) {
   saveAs(blob, fileName);
 }
 
-function exportExcel(logData) {
-  const ws = XLSX.utils.json_to_sheet(logData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Log");
-  const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-  saveAs(new Blob([wbout], { type: "application/octet-stream" }), "ExportLog.xlsx");
-}
+
 
 document.getElementById("processBtn").onclick = async function() {
   const statusDiv = document.getElementById("status");
@@ -365,28 +358,11 @@ document.getElementById("processBtn").onclick = async function() {
         fileName += ".csv";
         downloadBlob(csv, fileName);
 
-logData.push({
-  Timestamp: new Date().toLocaleString(),
-  SourceFile: selectedFile.name,
-  Sheet: selectedSheet,
-  LetterGroup: letter,
-  Part: idx + 1,
-  RowsExported: dataOut.length,
-  StartRow: idx * splitSize + 2,
-  EndRow: Math.min((idx + 1) * splitSize + 1, json.length + 1),
-  StoresIncluded: [...new Set(chunk.map(r => r[storeCol]))].join(", "),
-  Reversed: reverse ? "Yes" : "No",
-  FileName: fileName,
-  Notes:
-    (unusedHeaders.length ? `Unused: ${unusedHeaders.join(", ")}` : "OK") +
-    (overLimitHeaders.length ? ` | OverLimit: ${overLimitHeaders.join(", ")}` : "") +
-    (invalidPairs.length ? ` | InvalidPairs: ${invalidPairs.join(", ")}` : "")
-});
+
 
       }
     }
 
-    exportExcel(logData);
     const s = document.getElementById("statusSpan");
     if (s) s.textContent = "✅ Complete";
     const successHTML = `<div id="successBanner" style="margin-bottom:10px; color:green; font-weight:bold;">✅ Export complete! CSVs and log downloaded.</div>`;
