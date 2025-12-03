@@ -5,6 +5,7 @@
 <title>Excel Splitter Tool</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
  body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
  header { background: #0f172a; color: white; padding: 1rem; text-align: center; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
@@ -302,13 +303,11 @@ document.getElementById("processBtn").onclick = async function() {
     if (overLimitHeaders.length || invalidPairs.length)
       return showErrorSummary({ title: "Invalid headers detected", rows: [...overLimitHeaders, ...invalidPairs] });
 
-
-    // ✅ All validations passed
     document.getElementById("statusSpan").textContent = "Processing...";
     await new Promise(r => setTimeout(r, 200));
 
     const letters = [...new Set(validHeaders.map(h => h[0].toUpperCase()))];
-    const logData = [];
+    const zip = new JSZip(); // ✅ create a zip instance
     const totalSteps = letters.length * (splitSize > 0 ? Math.ceil(json.length / splitSize) : 1);
     let currentStep = 0;
 
@@ -334,11 +333,7 @@ document.getElementById("processBtn").onclick = async function() {
           const row = { Index: index, [storeCol]: `"${r[storeCol]}"` };
           allCols.forEach(c => {
             const mergedHeader = validHeaders.find(h => h.toUpperCase().includes(c.toUpperCase()));
-            if (mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "") {
-              row[c] = r[mergedHeader];
-            } else {
-              row[c] = r[c] !== undefined && r[c] !== "" ? r[c] : 0;
-            }
+            row[c] = mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "" ? r[mergedHeader] : 0;
           });
           row["Flag"] = 1;
           dataOut.push(row);
@@ -351,21 +346,24 @@ document.getElementById("processBtn").onclick = async function() {
         dataOut.push(endRow);
 
         const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]);
-
         let baseName = selectedFile.name.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "").replace(/_+/g, "_").replace(/^_+|_+$/g, "") || "Output";
         let fileName = `${baseName}_${letter}`;
         if (chunks.length > 1) fileName += `_part${idx + 1}`;
         fileName += ".csv";
-        downloadBlob(csv, fileName);
 
+        zip.file(fileName, csv); // ✅ add CSV to zip
 
-
+        currentStep++;
+        progressBar.style.width = `${Math.round((currentStep / totalSteps) * 100)}%`;
       }
     }
 
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    saveAs(zipBlob, `${selectedFile.name.replace(/\.[^/.]+$/, "")}_CSVs.zip`);
+
     const s = document.getElementById("statusSpan");
     if (s) s.textContent = "✅ Complete";
-    const successHTML = `<div id="successBanner" style="margin-bottom:10px; color:green; font-weight:bold;">✅ Export complete! CSVs and log downloaded.</div>`;
+    const successHTML = `<div id="successBanner" style="margin-bottom:10px; color:green; font-weight:bold;">✅ Export complete! ZIP downloaded.</div>`;
     statusDiv.insertAdjacentHTML("afterbegin", successHTML);
     setTimeout(() => progressContainer.style.display = "none", 800);
   } catch (err) {
