@@ -165,6 +165,8 @@ let selectedFile, workbook;
 
 const sheetSelect = document.getElementById("sheetSelect");
 const processBtn = document.getElementById("processBtn");
+const progressContainer = document.getElementById("progressContainer");
+const progressBar = document.getElementById("progressBar");
 
 document.getElementById("inputFile").addEventListener("change", e => {
   selectedFile = e.target.files[0];
@@ -204,11 +206,9 @@ sheetSelect.addEventListener("change", e => {
   processBtn.disabled = !e.target.value;
 });
 
-// ✅ Reusable error display
+// Reusable error display
 function showErrorSummary({ title = "Error", rows = [], extraNote = "", limit = 50 }) {
   const statusDiv = document.getElementById("status");
-  const statusSpan = document.getElementById("statusSpan");
-  if (statusSpan) statusSpan.textContent = `❌ ${title}`;
   const limitedRows = rows.slice(0, limit);
   const rowsHTML = limitedRows.map(r =>
     typeof r === "string" ? r : `Row ${r.RowNumber}: Missing ${r.MissingColumns}`).join("<br>");
@@ -219,7 +219,7 @@ function showErrorSummary({ title = "Error", rows = [], extraNote = "", limit = 
       ${rows.length > limit ? "<div style='margin-left:15px;'><em> (showing first 50 only)</em></div>" : ""}
       ${extraNote ? `<div style="color:red; margin-left:15px; margin-top:5px;">${extraNote}</div>` : ""}
     </div>`;
-  document.getElementById("progressContainer").style.display = "none";
+  progressContainer.style.display = "none";
 }
 
 function buildSummaryHTML({ statusText = "Analyzing headers...", validHeaders = [], unusedHeaders = [], overLimitHeaders = [], invalidPairs = [] }) {
@@ -244,21 +244,21 @@ function createCSV(data, headers) {
   return rows.join("\n");
 }
 
-function downloadBlob(content, fileName) {
-  const windowsContent = content.replace(/\n/g, "\r\n");
-  const bom = "\uFEFF";
-  const blob = new Blob([bom + windowsContent], { type: "text/csv;charset=utf-8;" });
-  saveAs(blob, fileName);
+// Encode string to ANSI (Windows-1252)
+function encodeANSI(str) {
+  const buf = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    buf[i] = code < 256 ? code : 63; // replace non-ANSI chars with ?
+  }
+  return buf;
 }
-
-
 
 document.getElementById("processBtn").onclick = async function() {
   const statusDiv = document.getElementById("status");
   const selectedSheet = sheetSelect.value;
   if (!selectedSheet) return (statusDiv.textContent = "Please select a sheet first.");
-  const progressContainer = document.getElementById("progressContainer");
-  const progressBar = document.getElementById("progressBar");
+
   progressContainer.style.display = "block";
   progressBar.style.width = "0%";
 
@@ -305,77 +305,82 @@ document.getElementById("processBtn").onclick = async function() {
     document.getElementById("statusSpan").textContent = "Processing...";
     await new Promise(r => setTimeout(r, 200));
 
+    // --- Start processing ---
     const letters = [...new Set(validHeaders.map(h => h[0].toUpperCase()))];
-    const zip = new JSZip(); // ✅ create a zip instance
-    const totalSteps = letters.length * (splitSize > 0 ? Math.ceil(json.length / splitSize) : 1);
+    const baseName = selectedFile.name.replace(/\.[^/.]+$/, "");
+    const zip = new JSZip();
+
+    let totalSteps = letters.length * (splitSize > 0 ? Math.ceil(json.length / splitSize) : 1);
     let currentStep = 0;
 
     for (const letter of letters) {
-      const allCols = [];
-      for (let i = 1; i <= 12; i++) allCols.push(letter + i);
-
+      const allCols = Array.from({ length: 12 }, (_, i) => letter + (i + 1));
       const chunks = splitSize > 0
-        ? Array.from({length: Math.ceil(json.length / splitSize)}, (_, i) => json.slice(i*splitSize, (i+1)*splitSize))
+        ? Array.from({ length: Math.ceil(json.length / splitSize) }, (_, i) => json.slice(i * splitSize, (i+1)*splitSize))
         : [json];
 
       for (let idx = 0; idx < chunks.length; idx++) {
         const chunk = reverse ? [...chunks[idx]].reverse() : chunks[idx];
         const dataOut = [];
-        let index = 0;
-        const startRow = { Index: index, [storeCol]: `"START"` };
+        let rowIndex = 0;
+
+        // START row
+        const startRow = { Index: rowIndex, [storeCol]: `"START"` };
         allCols.forEach(c => startRow[c] = 0);
         startRow["Flag"] = 1;
         dataOut.push(startRow);
 
+        // Data rows
         chunk.forEach(r => {
-          index++;
-          const row = { Index: index, [storeCol]: `"${r[storeCol]}"` };
+          rowIndex++;
+          const row = { Index: rowIndex, [storeCol]: `"${r[storeCol]}"` };
           allCols.forEach(c => {
-            const mergedHeader = validHeaders.find(h => h.toUpperCase().includes(c.toUpperCase()));
+            let mergedHeader = validHeaders.find(h => h.toUpperCase() === c.toUpperCase());
+            if (!mergedHeader) {
+              mergedHeader = validHeaders.find(h => {
+                const upperH = h.toUpperCase();
+                return upperH.startsWith(c.toUpperCase()) || upperH.endsWith(c.toUpperCase());
+              });
+            }
             row[c] = mergedHeader && r[mergedHeader] !== undefined && r[mergedHeader] !== "" ? r[mergedHeader] : 0;
           });
           row["Flag"] = 1;
           dataOut.push(row);
         });
 
-        index++;
-        const endRow = { Index: index, [storeCol]: `"END"` };
+        // END row
+        rowIndex++;
+        const endRow = { Index: rowIndex, [storeCol]: `"END"` };
         allCols.forEach(c => endRow[c] = 0);
         endRow["Flag"] = 0;
         dataOut.push(endRow);
 
-        const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]);
-        let baseName = selectedFile.name.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "").replace(/_+/g, "_").replace(/^_+|_+$/g, "") || "Output";
+        // Build CSV & encode ANSI
+        const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]).replace(/\n/g, "\r\n");
+        const ansiBytes = encodeANSI(csv);
+
+        // File name
         let fileName = `${baseName}_${letter}`;
         if (chunks.length > 1) fileName += `_part${idx + 1}`;
         fileName += ".csv";
 
-        // 1️⃣ Convert newlines to Windows style
-const csvWindows = csv.replace(/\n/g, "\r\n");
+        // Add as binary to ZIP
+        zip.file(fileName, ansiBytes, { binary: true });
 
-// 2️⃣ Convert to ANSI (Windows-1252), fallback '?' for chars > 255
-const ansiBytes = [];
-for (let i = 0; i < csvWindows.length; i++) {
-  const code = csvWindows.charCodeAt(i);
-  ansiBytes.push(code < 256 ? code : 63);
-}
-
-// 3️⃣ Add CSV to ZIP as ANSI
-zip.file(fileName, new Uint8Array(ansiBytes));
-
+        // Update progress
         currentStep++;
         progressBar.style.width = `${Math.round((currentStep / totalSteps) * 100)}%`;
+        await new Promise(r => setTimeout(r, 1)); // allow UI update
       }
     }
 
+    // Generate ZIP and download
     const zipBlob = await zip.generateAsync({ type: "blob" });
-    saveAs(zipBlob, `${selectedFile.name.replace(/\.[^/.]+$/, "")}_CSVs.zip`);
-
-    const s = document.getElementById("statusSpan");
-    if (s) s.textContent = "✅ Complete";
-    const successHTML = `<div id="successBanner" style="margin-bottom:10px; color:green; font-weight:bold;">✅ Export complete! ZIP downloaded.</div>`;
-    statusDiv.insertAdjacentHTML("afterbegin", successHTML);
+    saveAs(zipBlob, `${baseName}_CSVs.zip`);
+    document.getElementById("statusSpan").textContent = "✅ Complete";
+    statusDiv.insertAdjacentHTML("afterbegin", `<div style="margin-bottom:10px; color:green; font-weight:bold;">✅ Export complete! ZIP downloaded.</div>`);
     setTimeout(() => progressContainer.style.display = "none", 800);
+
   } catch (err) {
     statusDiv.innerHTML = `<span style="color:red;">Error: ${err.message}</span>`;
     console.error(err);
