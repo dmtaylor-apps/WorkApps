@@ -356,7 +356,7 @@ document.getElementById("processBtn").onclick = async function() {
         dataOut.push(endRow);
 
         // Build CSV & encode ANSI
-        const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]).replace(/\n/g, "\r\n");
+const csv = createCSV(dataOut, ["Index", storeCol, ...allCols, "Flag"]).replace(/\n/g, "\r\n") + "\r\n";
         const ansiBytes = encodeANSI(csv);
 
         // File name
