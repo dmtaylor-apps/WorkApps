@@ -351,7 +351,18 @@ document.getElementById("processBtn").onclick = async function() {
         if (chunks.length > 1) fileName += `_part${idx + 1}`;
         fileName += ".csv";
 
-        zip.file(fileName, csv); // ✅ add CSV to zip
+        // 1️⃣ Convert newlines to Windows style
+const csvWindows = csv.replace(/\n/g, "\r\n");
+
+// 2️⃣ Convert to ANSI (Windows-1252), fallback '?' for chars > 255
+const ansiBytes = [];
+for (let i = 0; i < csvWindows.length; i++) {
+  const code = csvWindows.charCodeAt(i);
+  ansiBytes.push(code < 256 ? code : 63);
+}
+
+// 3️⃣ Add CSV to ZIP as ANSI
+zip.file(fileName, new Uint8Array(ansiBytes));
 
         currentStep++;
         progressBar.style.width = `${Math.round((currentStep / totalSteps) * 100)}%`;
