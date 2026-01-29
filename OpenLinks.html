@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>KEP Bulk Opener</title>
+
+<style>
+ body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+ header { background: #0f172a; color: white; padding: 1rem; text-align: center; }
+
+ .container {
+  padding: 30px 40px;
+  border-radius: 16px;
+  text-align: center;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+ }
+
+ textarea {
+   width: 90%;
+   height: 140px;
+   padding: 12px;
+   border-radius: 12px;
+   border: 1px solid #ccc;
+   font-size: 14px;
+   margin: 10px 0 20px;
+   resize: vertical;
+ }
+
+ label.section-title {
+   display: block;
+   text-align: left;
+   font-weight: bold;
+   margin-top: 20px;
+   margin-bottom: 4px;
+   font-size: 14px;
+ }
+
+ input[type="number"] {
+   width: 100px;
+   padding: 6px 10px;
+   border-radius: 12px;
+   border: 1px solid #ccc;
+   font-size: 14px;
+   margin-left: 10px;
+ }
+
+ button {
+   background: #2563eb;
+   color: white;
+   border: none;
+   padding: 0.7rem 1.2rem;
+   border-radius: 8px;
+   cursor: pointer;
+   margin-top: 15px;
+ }
+
+ button:hover { background: #1e40af; }
+
+ #status {
+   margin-top: 15px;
+   font-weight: bold;
+   font-size: 14px;
+   text-align: left;
+ }
+
+ .instructions {
+   text-align:left;
+   margin-top:40px;
+   font-size:14px;
+   color:#333;
+   background:#f7f7f7;
+   padding:15px 20px;
+   border-radius:12px;
+   border:1px solid #ddd;
+   line-height:1.5;
+ }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🚀 KEP Bulk Editor Opener</h1>
+</header>
+
+<div class="container">
+
+  <!-- VARIANTS -->
+  <label class="section-title">Variants</label>
+  <textarea id="variants" placeholder="12345"></textarea>
+
+  <!-- ITEMS -->
+  <label class="section-title">Items</label>
+  <textarea id="items" placeholder="67890"></textarea>
+
+  <!-- RAW URLS -->
+  <label class="section-title">Raw URLs</label>
+  <textarea id="urls" placeholder="https://example.com"></textarea>
+
+  <div style="margin-top:10px;">
+    <label>Delay between tabs (ms):
+      <input type="number" id="delay" value="300" min="0">
+    </label>
+  </div>
+
+  <button onclick="openAll()">Open Tabs</button>
+
+  <div id="status"></div>
+
+  <div class="instructions">
+    <strong style="display:block; margin-bottom:8px; font-size:15px;">
+      How this works
+    </strong>
+    <ul style="padding-left:20px; margin:0; line-height:1.6;">
+      <li><strong>Variants:</strong> paste variant IDs (one per line)</li>
+      <li><strong>Items:</strong> paste item IDs (one per line)</li>
+      <li><strong>Raw URLs:</strong> paste full URLs if needed</li>
+      <li>Firefox will ask once to allow pop-ups — allow it</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+const VARIANT_BASE =
+  "https://console.kep.brand-iq.app/catalogue/items/variants/";
+const ITEM_BASE =
+  "https://console.kep.brand-iq.app/catalogue/items/";
+
+function cleanLines(text) {
+  return text
+    .split(/\r?\n/)
+    .map(v => v.trim())
+    .filter(v => v.length);
+}
+
+function openAll() {
+  const delay = parseInt(document.getElementById("delay").value) || 0;
+  const status = document.getElementById("status");
+
+  const variantIds = cleanLines(document.getElementById("variants").value);
+  const itemIds = cleanLines(document.getElementById("items").value);
+  const rawUrls = cleanLines(document.getElementById("urls").value);
+
+  const urls = [];
+
+  variantIds.forEach(id =>
+    urls.push(`${VARIANT_BASE}${id}/edit`)
+  );
+
+  itemIds.forEach(id =>
+    urls.push(`${ITEM_BASE}${id}/edit`)
+  );
+
+  rawUrls.forEach(u =>
+    urls.push(u.startsWith("http") ? u : "https://" + u)
+  );
+
+  if (!urls.length) {
+    status.innerHTML = "<span style='color:red;'>Nothing to open.</span>";
+    return;
+  }
+
+  status.innerHTML = `Opening ${urls.length} tabs...`;
+
+  let i = 0;
+  function openNext() {
+    if (i >= urls.length) {
+      status.innerHTML =
+        `<span style="color:green;">✅ Opened ${urls.length} tabs</span>`;
+      return;
+    }
+    window.open(urls[i], "_blank");
+    i++;
+    setTimeout(openNext, delay);
+  }
+
+  openNext();
+}
+</script>
+
+</body>
+</html>
