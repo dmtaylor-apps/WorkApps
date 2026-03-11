@@ -5,81 +5,116 @@
 <title>KEP Bulk Opener</title>
 
 <style>
- body { font-family: Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
- header { background: #0f172a; color: white; padding: 1rem; text-align: center; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f0f2f5;
+    margin: 0;
+    padding: 0;
+  }
 
- .container {
-  padding: 30px 40px;
-  border-radius: 16px;
-  text-align: center;
-  max-width: 800px;
-  width: 100%;
-  margin: 0 auto;
- }
+  header {
+    background: #0f172a; /* original color restored */
+    color: white;
+    padding: 1.2rem;
+    text-align: center;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  }
 
- textarea {
-   width: 90%;
-   height: 140px;
-   padding: 12px;
-   border-radius: 12px;
-   border: 1px solid #ccc;
-   font-size: 14px;
-   margin: 10px 0 20px;
-   resize: vertical;
- }
+  .container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 30px 40px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  }
 
- label.section-title {
-   display: block;
-   text-align: left;
-   font-weight: bold;
-   margin-top: 20px;
-   margin-bottom: 4px;
-   font-size: 14px;
- }
+  label.section-title {
+    display: block;
+    font-weight: 600;
+    margin-top: 25px;
+    margin-bottom: 8px;
+    font-size: 15px;
+    color: #1f2937;
+  }
 
- input[type="number"] {
-   width: 100px;
-   padding: 6px 10px;
-   border-radius: 12px;
-   border: 1px solid #ccc;
-   font-size: 14px;
-   margin-left: 10px;
- }
+  textarea {
+    width: 100%;
+    height: 140px;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    resize: vertical;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  }
 
- button {
-   background: #2563eb;
-   color: white;
-   border: none;
-   padding: 0.7rem 1.2rem;
-   border-radius: 8px;
-   cursor: pointer;
-   margin-top: 15px;
- }
+  input[type="number"] {
+    width: 100px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    margin-left: 10px;
+  }
 
- button:hover { background: #1e40af; }
+  button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 0.7rem 1.3rem;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-weight: 500;
+    transition: 0.2s;
+  }
 
- #status {
-   margin-top: 15px;
-   font-weight: bold;
-   font-size: 14px;
-   text-align: left;
- }
+  button:hover { background: #1d4ed8; }
 
- .instructions {
-   text-align:left;
-   margin-top:40px;
-   font-size:14px;
-   color:#333;
-   background:#f7f7f7;
-   padding:15px 20px;
-   border-radius:12px;
-   border:1px solid #ddd;
-   line-height:1.5;
- }
+  #status {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 14px;
+    text-align: left;
+  }
 
- #item-hash-buttons button {
-   margin: 2px 4px 2px 0;
- }
+  .instructions {
+    text-align:left;
+    margin-top:40px;
+    font-size:14px;
+    color:#374151;
+    background:#f9fafb;
+    padding:20px;
+    border-radius:12px;
+    border:1px solid #e5e7eb;
+    line-height:1.6;
+  }
+
+  .hash-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .hash-buttons button {
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 20px;
+    border: 1px solid #cbd5e1;
+    background: #f3f4f6;
+    color: #1f2937;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .hash-buttons button.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+  }
+
 </style>
 </head>
 
@@ -98,33 +133,28 @@
   <!-- ITEMS -->
   <label class="section-title">Items</label>
   <textarea id="items" placeholder="67890"></textarea>
-
-  <!-- Hash buttons for Items -->
-  <div id="item-hash-buttons" style="text-align:left; margin-bottom:15px;">
-    <strong>Optional anchors:</strong><br>
+  <div id="item-hash-buttons" class="hash-buttons">
+    <!-- Item hash buttons inserted via JS -->
   </div>
 
   <!-- RAW URLS -->
   <label class="section-title">Raw URLs</label>
   <textarea id="urls" placeholder="https://example.com"></textarea>
 
-  <div style="margin-top:10px;">
+  <div style="margin-top:15px;">
     <label>Delay between tabs (ms):
       <input type="number" id="delay" value="300" min="0">
     </label>
   </div>
 
   <button onclick="openAll()">Open Tabs</button>
-
   <div id="status"></div>
 
   <div class="instructions">
-    <strong style="display:block; margin-bottom:8px; font-size:15px;">
-      How this works
-    </strong>
+    <strong style="display:block; margin-bottom:8px; font-size:15px;">How this works</strong>
     <ul style="padding-left:20px; margin:0; line-height:1.6;">
       <li><strong>Variants:</strong> paste variant IDs (one per line)</li>
-      <li><strong>Items:</strong> paste item IDs (one per line) and optionally click a button to append a hash anchor to all URLs</li>
+      <li><strong>Items:</strong> paste item IDs (one per line) and optionally click a hash button</li>
       <li><strong>Raw URLs:</strong> paste full URLs if needed</li>
       <li>Firefox will ask once to allow pop-ups — allow it</li>
     </ul>
@@ -158,26 +188,26 @@ const ITEM_HASH_OPTIONS = {
   "#item-notes": "Notes"
 };
 
-const hashButtonsContainer = document.getElementById("item-hash-buttons");
-let selectedHash = ""; // currently active hash
+let selectedItemHash = "";
 
+const itemContainer = document.getElementById("item-hash-buttons");
 for (const [hash, label] of Object.entries(ITEM_HASH_OPTIONS)) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.textContent = label;
   btn.onclick = () => {
-    if (selectedHash === hash) {
-      selectedHash = ""; // toggle off
-      btn.style.background = "#2563eb";
+    if (selectedItemHash === hash) {
+      selectedItemHash = "";
+      btn.classList.remove("active");
     } else {
-      selectedHash = hash;
-      // reset all other buttons
-      Array.from(hashButtonsContainer.querySelectorAll("button")).forEach(b => b.style.background="#2563eb");
-      btn.style.background = "#1e40af";
+      selectedItemHash = hash;
+      Array.from(itemContainer.querySelectorAll("button")).forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
     }
   };
-  hashButtonsContainer.appendChild(btn);
+  itemContainer.appendChild(btn);
 }
+
 // ------------------------------------------------------------
 
 function openAll() {
@@ -198,7 +228,7 @@ function openAll() {
   // Items with optional hash
   itemIds.forEach(id => {
     let url = `${ITEM_BASE}${id}/edit`;
-    if (selectedHash) url += selectedHash;
+    if (selectedItemHash) url += selectedItemHash;
     urls.push(url);
   });
 
